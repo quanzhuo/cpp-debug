@@ -1,4 +1,5 @@
 const esbuild = require("esbuild");
+const fs = require('fs');
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -24,9 +25,9 @@ const esbuildProblemMatcherPlugin = {
 };
 
 async function main() {
-	const ctx = await esbuild.context({
+	const extCtx = await esbuild.context({
 		entryPoints: [
-			'src/extension.ts'
+			'src/frontend/extension.ts'
 		],
 		bundle: true,
 		format: 'cjs',
@@ -42,11 +43,36 @@ async function main() {
 			esbuildProblemMatcherPlugin,
 		],
 	});
+
+	const daCtx = esbuild.context({
+		entryPoints: [
+			// 'src/debugAdapter.ts'
+			'src/gdb.ts',
+			'src/lldb.ts',
+		],
+		bundle: true,
+		format: 'cjs',
+		minify: production,
+		sourcemap: !production,
+		sourcesContent: false,
+		platform: 'node',
+		outdir: 'dist',
+		logLevel: 'silent',
+		plugins: [
+			/* add to the end of plugins array */
+			esbuildProblemMatcherPlugin
+		],
+		external: ['*.node'],
+	});
+
+	await fs.promises.rm('dist', { recursive: true, force: true });
+	const ctxes = await Promise.all([extCtx, daCtx]);
+
 	if (watch) {
-		await ctx.watch();
+		await Promise.all(ctxes.map(ctx => ctx.watch()));
 	} else {
-		await ctx.rebuild();
-		await ctx.dispose();
+		await Promise.all(ctxes.map(ctx => ctx.rebuild()));
+		await Promise.all(ctxes.map(ctx => ctx.dispose()));
 	}
 }
 
