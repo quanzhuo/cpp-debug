@@ -1,16 +1,33 @@
 {
-  "name": "cpp-debug",
-  "displayName": "cpp-debug",
+  "name": "cppdebug",
+  "displayName": "C/C++ Debug (gdb)",
   "description": "",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
+    "Debuggers",
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:c",
+    "onLanguage:cpp",
+    "onDebugResolve:cppdbg",
+    "onCommand:extension.pickNativeProcess",
+    "onCommand:extension.pickRemoteNativeProcess"
+  ],
   "main": "./dist/extension.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/quanzhuo/cpp-debug"
+  },
+  "bugs": {
+    "url": "https://github.com/quanzhuo/cpp-debug/issues",
+    "email": "quanzhuo@kylinos.cn"
+  },
+  "publisher": "KylinIdeTeam",
+  "icon": "images/icon.png",
   "contributes": {
     "commands": [
       {
@@ -18,7 +35,1838 @@
         "title": "Hello World"
       }
     ],
+    "debuggers": [
+      {
+        "type": "cppdbg",
+        "label": "C/C++ (gdb)",
+        "languages": [
+          "ada",
+          "c",
+          "cpp",
+          "cuda-cpp",
+          "rust"
+        ],
+        "program": "dist/debugAdapter.js",
+        "runtime": "node",
+        "variables": {
+          "pickProcess": "extension.pickNativeProcess",
+          "pickRemoteProcess": "extension.pickRemoteNativeProcess"
+        },
+        "configurationAttributes": {
+          "launch": {
+            "type": "object",
+            "required": [
+              "program"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.program.description%",
+                "default": "${workspaceFolder}/a.out"
+              },
+              "args": {
+                "type": "array",
+                "description": "%c_cpp.debuggers.args.description%",
+                "items": {
+                  "type": "string"
+                },
+                "default": []
+              },
+              "type": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.cppdbg.type.description%",
+                "default": "cppdbg"
+              },
+              "targetArchitecture": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.targetArchitecture.description%",
+                "default": "x64"
+              },
+              "cwd": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.cwd.description%",
+                "default": "."
+              },
+              "setupCommands": {
+                "type": "array",
+                "description": "%c_cpp.debuggers.setupCommands.description%",
+                "items": {
+                  "type": "object",
+                  "default": {},
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "description": "%c_cpp.debuggers.text.description%",
+                      "default": ""
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "%c_cpp.debuggers.description.description%",
+                      "default": ""
+                    },
+                    "ignoreFailures": {
+                      "type": "boolean",
+                      "description": "%c_cpp.debuggers.ignoreFailures.description%",
+                      "default": false
+                    }
+                  }
+                },
+                "default": []
+              },
+              "postRemoteConnectCommands": {
+                "type": "array",
+                "description": "%c_cpp.debuggers.postRemoteConnectCommands.description%",
+                "items": {
+                  "type": "object",
+                  "default": {},
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "description": "%c_cpp.debuggers.text.description%",
+                      "default": ""
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "%c_cpp.debuggers.description.description%",
+                      "default": ""
+                    },
+                    "ignoreFailures": {
+                      "type": "boolean",
+                      "description": "%c_cpp.debuggers.ignoreFailures.description%",
+                      "default": false
+                    }
+                  }
+                },
+                "default": []
+              },
+              "customLaunchSetupCommands": {
+                "type": "array",
+                "description": "%c_cpp.debuggers.customLaunchSetupCommands.description%",
+                "items": {
+                  "type": "object",
+                  "default": {},
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "description": "%c_cpp.debuggers.text.description%",
+                      "default": ""
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "%c_cpp.debuggers.description.description%",
+                      "default": ""
+                    },
+                    "ignoreFailures": {
+                      "type": "boolean",
+                      "description": "%c_cpp.debuggers.ignoreFailures.description%",
+                      "default": false
+                    }
+                  }
+                },
+                "default": []
+              },
+              "launchCompleteCommand": {
+                "enum": [
+                  "exec-run",
+                  "exec-continue",
+                  "None"
+                ],
+                "description": "%c_cpp.debuggers.launchCompleteCommand.description%",
+                "default": "exec-run"
+              },
+              "visualizerFile": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "default": ""
+                  },
+                  {
+                    "type": "array",
+                    "default": [],
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "description": "%c_cpp.debuggers.cppdbg.visualizerFile.description%"
+              },
+              "svdPath": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.cppdbg.svdPath.description",
+                "default": ""
+              },
+              "showDisplayString": {
+                "type": "boolean",
+                "description": "%c_cpp.debuggers.showDisplayString.description%",
+                "default": true
+              },
+              "environment": {
+                "type": "array",
+                "description": "%c_cpp.debuggers.environment.description%",
+                "items": {
+                  "type": "object",
+                  "default": {},
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "default": []
+              },
+              "envFile": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.envFile.description%",
+                "default": "${workspaceFolder}/.env"
+              },
+              "additionalSOLibSearchPath": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.additionalSOLibSearchPath.description%",
+                "default": ""
+              },
+              "MIMode": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.MIMode.description%",
+                "default": "gdb"
+              },
+              "miDebuggerPath": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.miDebuggerPath.description%",
+                "default": "/usr/bin/gdb"
+              },
+              "miDebuggerArgs": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.miDebuggerArgs.description%",
+                "default": ""
+              },
+              "miDebuggerServerAddress": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.miDebuggerServerAddress.description%",
+                "default": "serveraddress:port"
+              },
+              "useExtendedRemote": {
+                "type": "boolean",
+                "description": "%c_cpp.debuggers.useExtendedRemote.description%",
+                "default": false
+              },
+              "stopAtEntry": {
+                "type": "boolean",
+                "description": "%c_cpp.debuggers.stopAtEntry.description%",
+                "default": false
+              },
+              "debugServerPath": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.debugServerPath.description%",
+                "default": ""
+              },
+              "debugServerArgs": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.debugServerArgs.description%",
+                "default": ""
+              },
+              "serverStarted": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.serverStarted.description%",
+                "default": ""
+              },
+              "filterStdout": {
+                "type": "boolean",
+                "description": "%c_cpp.debuggers.filterStdout.description%",
+                "default": true
+              },
+              "filterStderr": {
+                "type": "boolean",
+                "description": "%c_cpp.debuggers.filterStderr.description%",
+                "default": false
+              },
+              "serverLaunchTimeout": {
+                "type": "integer",
+                "description": "%c_cpp.debuggers.serverLaunchTimeout.description%",
+                "default": "10000"
+              },
+              "coreDumpPath": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.coreDumpPath.description%",
+                "default": ""
+              },
+              "externalConsole": {
+                "type": "boolean",
+                "description": "%c_cpp.debuggers.cppdbg.externalConsole.description%",
+                "default": false
+              },
+              "avoidWindowsConsoleRedirection": {
+                "type": "boolean",
+                "description": "%c_cpp.debuggers.avoidWindowsConsoleRedirection.description%",
+                "default": false
+              },
+              "sourceFileMap": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "description": "%c_cpp.debuggers.sourceFileMap.description%",
+                    "default": {
+                      "<source-path>": "<target-path>"
+                    }
+                  },
+                  {
+                    "description": "%c_cpp.debuggers.sourceFileMap.sourceFileMapEntry.description%",
+                    "type": "object",
+                    "default": {
+                      "<source-path>": {
+                        "editorPath": "",
+                        "useForBreakpoints": true
+                      }
+                    },
+                    "properties": {
+                      "<source-path>": {
+                        "type": "object",
+                        "default": {
+                          "editorPath": "",
+                          "useForBreakpoints": true
+                        },
+                        "properties": {
+                          "editorPath": {
+                            "type": "string",
+                            "description": "%c_cpp.debuggers.sourceFileMap.sourceFileMapEntry.editorPath.description%",
+                            "default": ""
+                          },
+                          "useForBreakpoints": {
+                            "type": "boolean",
+                            "description": "%c_cpp.debuggers.sourceFileMap.sourceFileMapEntry.useForBreakpoints.description%",
+                            "default": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              "logging": {
+                "description": "%c_cpp.debuggers.logging.description%",
+                "type": "object",
+                "default": {},
+                "properties": {
+                  "exceptions": {
+                    "type": "boolean",
+                    "description": "%c_cpp.debuggers.logging.exceptions.description%",
+                    "default": true
+                  },
+                  "moduleLoad": {
+                    "type": "boolean",
+                    "description": "%c_cpp.debuggers.logging.moduleLoad.description%",
+                    "default": true
+                  },
+                  "programOutput": {
+                    "type": "boolean",
+                    "description": "%c_cpp.debuggers.logging.programOutput.description%",
+                    "default": true
+                  },
+                  "engineLogging": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "verbose",
+                          "warning",
+                          "error",
+                          "none"
+                        ],
+                        "enumDescriptions": [
+                          "%c_cpp.debuggers.logging.category.verbose.description%",
+                          "%c_cpp.debuggers.logging.category.warning.description%",
+                          "%c_cpp.debuggers.logging.category.error.description%",
+                          "%c_cpp.debuggers.logging.category.none.description%"
+                        ],
+                        "description": "%c_cpp.debuggers.logging.engineLogging.description%",
+                        "default": "none"
+                      },
+                      {
+                        "type": "boolean",
+                        "description": "%c_cpp.debuggers.logging.engineLogging.description%",
+                        "default": false
+                      }
+                    ]
+                  },
+                  "trace": {
+                    "type": "boolean",
+                    "description": "%c_cpp.debuggers.logging.trace.description%",
+                    "default": false
+                  },
+                  "traceResponse": {
+                    "type": "boolean",
+                    "description": "%c_cpp.debuggers.logging.traceResponse.description%",
+                    "default": false
+                  },
+                  "natvisDiagnostics": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "verbose",
+                          "warning",
+                          "error",
+                          "none"
+                        ],
+                        "enumDescriptions": [
+                          "%c_cpp.debuggers.logging.category.verbose.description%",
+                          "%c_cpp.debuggers.logging.category.warning.description%",
+                          "%c_cpp.debuggers.logging.category.error.description%",
+                          "%c_cpp.debuggers.logging.category.none.description%"
+                        ],
+                        "description": "%c_cpp.debuggers.logging.natvisDiagnostics.description%",
+                        "default": "none"
+                      },
+                      {
+                        "type": "boolean",
+                        "description": "%c_cpp.debuggers.logging.natvisDiagnostics.description%",
+                        "default": false
+                      }
+                    ]
+                  }
+                }
+              },
+              "pipeTransport": {
+                "description": "%c_cpp.debuggers.pipeTransport.description%",
+                "type": "object",
+                "default": {
+                  "pipeCwd": "/usr/bin",
+                  "pipeProgram": "%c_cpp.debuggers.pipeTransport.default.pipeProgram%",
+                  "pipeArgs": [],
+                  "debuggerPath": "%c_cpp.debuggers.pipeTransport.default.debuggerPath%"
+                },
+                "properties": {
+                  "pipeCwd": {
+                    "type": "string",
+                    "description": "%c_cpp.debuggers.pipeTransport.pipeCwd.description%",
+                    "default": "/usr/bin"
+                  },
+                  "pipeProgram": {
+                    "type": "string",
+                    "description": "%c_cpp.debuggers.pipeTransport.pipeProgram.description%",
+                    "default": "%c_cpp.debuggers.pipeTransport.default.pipeProgram%"
+                  },
+                  "pipeArgs": {
+                    "type": "array",
+                    "description": "%c_cpp.debuggers.pipeTransport.pipeArgs.description%",
+                    "items": {
+                      "type": "string"
+                    },
+                    "default": []
+                  },
+                  "debuggerPath": {
+                    "type": "string",
+                    "description": "%c_cpp.debuggers.pipeTransport.debuggerPath.description%",
+                    "default": "%c_cpp.debuggers.pipeTransport.default.debuggerPath%"
+                  },
+                  "pipeEnv": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "description": "%c_cpp.debuggers.pipeTransport.pipeEnv.description%",
+                    "default": {}
+                  },
+                  "quoteArgs": {
+                    "exceptions": {
+                      "type": "boolean",
+                      "description": "%c_cpp.debuggers.pipeTransport.quoteArgs.description%",
+                      "default": true
+                    }
+                  }
+                }
+              },
+              "symbolLoadInfo": {
+                "description": "%c_cpp.debuggers.symbolLoadInfo.description%",
+                "type": "object",
+                "default": {
+                  "loadAll": true,
+                  "exceptionList": ""
+                },
+                "properties": {
+                  "loadAll": {
+                    "type": "boolean",
+                    "description": "%c_cpp.debuggers.symbolLoadInfo.loadAll.description%",
+                    "default": true
+                  },
+                  "exceptionList": {
+                    "type": "string",
+                    "description": "%c_cpp.debuggers.symbolLoadInfo.exceptionList.description%",
+                    "default": ""
+                  }
+                }
+              },
+              "stopAtConnect": {
+                "type": "boolean",
+                "description": "%c_cpp.debuggers.stopAtConnect.description%",
+                "default": false
+              },
+              "hardwareBreakpoints": {
+                "description": "%c_cpp.debuggers.hardwareBreakpoints.description%",
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "require": {
+                    "type": "boolean",
+                    "description": "%c_cpp.debuggers.hardwareBreakpoints.require.description%",
+                    "default": false
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "description": "%c_cpp.debuggers.hardwareBreakpoints.limit.description%",
+                    "default": 0
+                  }
+                }
+              },
+              "unknownBreakpointHandling": {
+                "type": "string",
+                "enum": [
+                  "throw",
+                  "stop"
+                ],
+                "default": "throw",
+                "description": "%c_cpp.debuggers.unknownBreakpointHandling.description%"
+              },
+              "variables": {
+                "type": "object",
+                "description": "%c_cpp.debuggers.variables.description%",
+                "default": {
+                  "<variable-name>": "<variable-value>"
+                },
+                "properties": {},
+                "additionalProperties": {
+                  "type": "string",
+                  "description": "%c_cpp.debuggers.variables.properties.description%",
+                  "default": ""
+                }
+              },
+              "deploySteps": {
+                "type": "array",
+                "description": "%c_cpp.debuggers.deploySteps.description%",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "description": "%c_cpp.debuggers.deploySteps.copyFile.description%",
+                      "default": {},
+                      "required": [
+                        "type",
+                        "files",
+                        "host",
+                        "targetDir"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.copyFile.description%",
+                          "default": "",
+                          "enum": [
+                            "scp",
+                            "rsync"
+                          ]
+                        },
+                        "files": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "%c_cpp.debuggers.deploySteps.copyFile.files.description%",
+                          "default": ""
+                        },
+                        "host": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "description": "%c_cpp.debuggers.host.description%",
+                              "default": "hello@microsoft.com"
+                            },
+                            {
+                              "type": "object",
+                              "description": "%c_cpp.debuggers.host.description%",
+                              "default": {},
+                              "required": [
+                                "hostName"
+                              ],
+                              "properties": {
+                                "user": {
+                                  "type": "string",
+                                  "description": "%c_cpp.debuggers.host.user.description%",
+                                  "default": ""
+                                },
+                                "hostName": {
+                                  "type": "string",
+                                  "description": "%c_cpp.debuggers.host.hostName.description%",
+                                  "default": ""
+                                },
+                                "port": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "string",
+                                      "pattern": "^\\d+$|^\\${.+}$"
+                                    }
+                                  ],
+                                  "description": "%c_cpp.debuggers.host.port.description%",
+                                  "default": 22
+                                },
+                                "jumpHosts": {
+                                  "type": "array",
+                                  "description": "%c_cpp.debuggers.host.jumpHost.description%",
+                                  "items": {
+                                    "type": "object",
+                                    "default": {},
+                                    "required": [
+                                      "hostName"
+                                    ],
+                                    "properties": {
+                                      "user": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.user.description%",
+                                        "default": ""
+                                      },
+                                      "hostName": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.hostName.description%",
+                                        "default": ""
+                                      },
+                                      "port": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "string",
+                                            "pattern": "^\\d+$|^\\${.+}$"
+                                          }
+                                        ],
+                                        "description": "%c_cpp.debuggers.host.port.description%",
+                                        "default": 22
+                                      }
+                                    }
+                                  }
+                                },
+                                "localForwards": {
+                                  "type": "array",
+                                  "description": "%c_cpp.debuggers.host.localForward.description%",
+                                  "items": {
+                                    "type": "object",
+                                    "default": {},
+                                    "properties": {
+                                      "bindAddress": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.bindAddress.description%",
+                                        "default": ""
+                                      },
+                                      "port": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "string",
+                                            "pattern": "^\\d+$|^\\${.+}$"
+                                          }
+                                        ],
+                                        "description": "%c_cpp.debuggers.host.localForward.port.description%"
+                                      },
+                                      "host": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.host.description%",
+                                        "default": ""
+                                      },
+                                      "hostPort": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "string",
+                                            "pattern": "^\\d+$|^\\${.+}$"
+                                          }
+                                        ],
+                                        "description": "%c_cpp.debuggers.host.localForward.hostPort.description%"
+                                      },
+                                      "localSocket": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.localSocket.description%",
+                                        "default": ""
+                                      },
+                                      "remoteSocket": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.remoteSocket.description%",
+                                        "default": ""
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "targetDir": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.copyFile.targetDir.description%",
+                          "default": ""
+                        },
+                        "recursive": {
+                          "type": "boolean",
+                          "description": "%c_cpp.debuggers.deploySteps.copyFile.recursive.description%",
+                          "default": "true"
+                        },
+                        "debug": {
+                          "type": "boolean",
+                          "description": "%c_cpp.debuggers.deploySteps.debug%"
+                        }
+                      },
+                      "allOf": [
+                        {
+                          "if": {
+                            "properties": {
+                              "type": {
+                                "const": "scp"
+                              }
+                            }
+                          },
+                          "then": {
+                            "properties": {
+                              "scpPath": {
+                                "type": "string",
+                                "description": "%c_cpp.debuggers.deploySteps.copyFile.scpPath.description%",
+                                "default": ""
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "type": {
+                                "const": "rsync"
+                              }
+                            }
+                          },
+                          "then": {
+                            "properties": {
+                              "rsyncPath": {
+                                "type": "string",
+                                "description": "%c_cpp.debuggers.deploySteps.copyFile.rsyncPath.description%",
+                                "default": ""
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "description": "%c_cpp.debuggers.deploySteps.ssh.description%",
+                      "default": {},
+                      "required": [
+                        "type",
+                        "host",
+                        "command"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.ssh.description%",
+                          "default": "",
+                          "enum": [
+                            "ssh"
+                          ]
+                        },
+                        "host": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "description": "%c_cpp.debuggers.host.description%",
+                              "default": "hello@microsoft.com"
+                            },
+                            {
+                              "type": "object",
+                              "description": "%c_cpp.debuggers.host.description%",
+                              "default": {},
+                              "required": [
+                                "hostName"
+                              ],
+                              "properties": {
+                                "user": {
+                                  "type": "string",
+                                  "description": "%c_cpp.debuggers.host.user.description%",
+                                  "default": ""
+                                },
+                                "hostName": {
+                                  "type": "string",
+                                  "description": "%c_cpp.debuggers.host.hostName.description%",
+                                  "default": ""
+                                },
+                                "port": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "string",
+                                      "pattern": "^\\d+$|^\\${.+}$"
+                                    }
+                                  ],
+                                  "description": "%c_cpp.debuggers.host.port.description%",
+                                  "default": 22
+                                },
+                                "jumpHosts": {
+                                  "type": "array",
+                                  "description": "%c_cpp.debuggers.host.jumpHost.description%",
+                                  "items": {
+                                    "type": "object",
+                                    "default": {},
+                                    "required": [
+                                      "hostName"
+                                    ],
+                                    "properties": {
+                                      "user": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.user.description%",
+                                        "default": ""
+                                      },
+                                      "hostName": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.hostName.description%",
+                                        "default": ""
+                                      },
+                                      "port": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "string",
+                                            "pattern": "^\\d+$|^\\${.+}$"
+                                          }
+                                        ],
+                                        "description": "%c_cpp.debuggers.host.port.description%",
+                                        "default": 22
+                                      }
+                                    }
+                                  }
+                                },
+                                "localForwards": {
+                                  "type": "array",
+                                  "description": "%c_cpp.debuggers.host.localForward.description%",
+                                  "items": {
+                                    "type": "object",
+                                    "default": {},
+                                    "properties": {
+                                      "bindAddress": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.bindAddress.description%",
+                                        "default": ""
+                                      },
+                                      "port": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "string",
+                                            "pattern": "^\\d+$|^\\${.+}$"
+                                          }
+                                        ],
+                                        "description": "%c_cpp.debuggers.host.localForward.port.description%"
+                                      },
+                                      "host": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.host.description%",
+                                        "default": ""
+                                      },
+                                      "hostPort": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "string",
+                                            "pattern": "^\\d+$|^\\${.+}$"
+                                          }
+                                        ],
+                                        "description": "%c_cpp.debuggers.host.localForward.hostPort.description%"
+                                      },
+                                      "localSocket": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.localSocket.description%",
+                                        "default": ""
+                                      },
+                                      "remoteSocket": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.remoteSocket.description%",
+                                        "default": ""
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "command": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.ssh.command.description%",
+                          "default": ""
+                        },
+                        "sshPath": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.ssh.sshPath.description%",
+                          "default": ""
+                        },
+                        "continueOn": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.continueOn.description%",
+                          "default": ""
+                        },
+                        "debug": {
+                          "type": "boolean",
+                          "description": "%c_cpp.debuggers.deploySteps.debug%"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "description": "%c_cpp.debuggers.deploySteps.shell.description%",
+                      "default": {},
+                      "required": [
+                        "type",
+                        "command"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.shell.description%",
+                          "default": "",
+                          "enum": [
+                            "shell"
+                          ]
+                        },
+                        "command": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.shell.command.description%",
+                          "default": ""
+                        },
+                        "continueOn": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.continueOn.description%",
+                          "default": ""
+                        },
+                        "debug": {
+                          "type": "boolean",
+                          "description": "%c_cpp.debuggers.deploySteps.debug%"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "description": "%c_cpp.debuggers.vsCodeCommand.description%",
+                      "default": {},
+                      "required": [
+                        "type",
+                        "command"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.vsCodeCommand.description%",
+                          "default": "",
+                          "enum": [
+                            "command"
+                          ]
+                        },
+                        "command": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.vsCodeCommand.command.description%",
+                          "default": ""
+                        },
+                        "args": {
+                          "type": "array",
+                          "description": "%c_cpp.debuggers.vsCodeCommand.args.description%",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "default": []
+              }
+            }
+          },
+          "attach": {
+            "type": "object",
+            "default": {},
+            "required": [
+              "program"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.program.description%",
+                "default": "${workspaceFolder}/a.out"
+              },
+              "type": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.cppdbg.type.description%",
+                "default": "cppdbg"
+              },
+              "targetArchitecture": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.targetArchitecture.description%",
+                "default": "x64"
+              },
+              "visualizerFile": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.cppdbg.visualizerFile.description%",
+                "default": ""
+              },
+              "showDisplayString": {
+                "type": "boolean",
+                "description": "%c_cpp.debuggers.showDisplayString.description%",
+                "default": true
+              },
+              "additionalSOLibSearchPath": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.additionalSOLibSearchPath.description%",
+                "default": ""
+              },
+              "MIMode": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.MIMode.description%",
+                "default": "gdb"
+              },
+              "miDebuggerPath": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.miDebuggerPath.description%",
+                "default": "/usr/bin/gdb"
+              },
+              "miDebuggerArgs": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.miDebuggerArgs.description%",
+                "default": ""
+              },
+              "miDebuggerServerAddress": {
+                "type": "string",
+                "description": "%c_cpp.debuggers.miDebuggerServerAddress.description%",
+                "default": "serveraddress:port"
+              },
+              "useExtendedRemote": {
+                "type": "boolean",
+                "description": "%c_cpp.debuggers.useExtendedRemote.description%",
+                "default": false
+              },
+              "processId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "description": "%c_cpp.debuggers.processId.anyOf.description%",
+                    "default": "${command:pickProcess}"
+                  },
+                  {
+                    "type": "integer",
+                    "description": "%c_cpp.debuggers.processId.anyOf.description%",
+                    "default": 0
+                  }
+                ]
+              },
+              "filterStdout": {
+                "type": "boolean",
+                "description": "%c_cpp.debuggers.filterStdout.description%",
+                "default": true
+              },
+              "filterStderr": {
+                "type": "boolean",
+                "description": "%c_cpp.debuggers.filterStderr.description%",
+                "default": false
+              },
+              "sourceFileMap": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "description": "%c_cpp.debuggers.sourceFileMap.description%",
+                    "default": {
+                      "<source-path>": "<target-path>"
+                    }
+                  },
+                  {
+                    "description": "%c_cpp.debuggers.sourceFileMap.sourceFileMapEntry.description%",
+                    "type": "object",
+                    "default": {
+                      "<source-path>": {
+                        "editorPath": "",
+                        "useForBreakpoints": true
+                      }
+                    },
+                    "properties": {
+                      "<source-path>": {
+                        "type": "object",
+                        "default": {
+                          "editorPath": "",
+                          "useForBreakpoints": true
+                        },
+                        "properties": {
+                          "editorPath": {
+                            "type": "string",
+                            "description": "%c_cpp.debuggers.sourceFileMap.sourceFileMapEntry.editorPath.description%",
+                            "default": ""
+                          },
+                          "useForBreakpoints": {
+                            "type": "boolean",
+                            "description": "%c_cpp.debuggers.sourceFileMap.sourceFileMapEntry.useForBreakpoints.description%",
+                            "default": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              "logging": {
+                "description": "%c_cpp.debuggers.logging.description%",
+                "type": "object",
+                "default": {},
+                "properties": {
+                  "exceptions": {
+                    "type": "boolean",
+                    "description": "%c_cpp.debuggers.logging.exceptions.description%",
+                    "default": true
+                  },
+                  "moduleLoad": {
+                    "type": "boolean",
+                    "description": "%c_cpp.debuggers.logging.moduleLoad.description%",
+                    "default": true
+                  },
+                  "programOutput": {
+                    "type": "boolean",
+                    "description": "%c_cpp.debuggers.logging.programOutput.description%",
+                    "default": true
+                  },
+                  "engineLogging": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "verbose",
+                          "warning",
+                          "error",
+                          "none"
+                        ],
+                        "enumDescriptions": [
+                          "%c_cpp.debuggers.logging.category.verbose.description%",
+                          "%c_cpp.debuggers.logging.category.warning.description%",
+                          "%c_cpp.debuggers.logging.category.error.description%",
+                          "%c_cpp.debuggers.logging.category.none.description%"
+                        ],
+                        "description": "%c_cpp.debuggers.logging.engineLogging.description%",
+                        "default": "none"
+                      },
+                      {
+                        "type": "boolean",
+                        "description": "%c_cpp.debuggers.logging.engineLogging.description%",
+                        "default": false
+                      }
+                    ]
+                  },
+                  "trace": {
+                    "type": "boolean",
+                    "description": "%c_cpp.debuggers.logging.trace.description%",
+                    "default": false
+                  },
+                  "traceResponse": {
+                    "type": "boolean",
+                    "description": "%c_cpp.debuggers.logging.traceResponse.description%",
+                    "default": false
+                  },
+                  "natvisDiagnostics": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "verbose",
+                          "warning",
+                          "error",
+                          "none"
+                        ],
+                        "enumDescriptions": [
+                          "%c_cpp.debuggers.logging.category.verbose.description%",
+                          "%c_cpp.debuggers.logging.category.warning.description%",
+                          "%c_cpp.debuggers.logging.category.error.description%",
+                          "%c_cpp.debuggers.logging.category.none.description%"
+                        ],
+                        "description": "%c_cpp.debuggers.logging.natvisDiagnostics.description%",
+                        "default": "none"
+                      },
+                      {
+                        "type": "boolean",
+                        "description": "%c_cpp.debuggers.logging.natvisDiagnostics.description%",
+                        "default": false
+                      }
+                    ]
+                  }
+                }
+              },
+              "pipeTransport": {
+                "description": "%c_cpp.debuggers.pipeTransport.description%",
+                "type": "object",
+                "default": {
+                  "pipeCwd": "/usr/bin",
+                  "pipeProgram": "%c_cpp.debuggers.pipeTransport.default.pipeProgram%",
+                  "pipeArgs": [],
+                  "debuggerPath": "%c_cpp.debuggers.pipeTransport.default.debuggerPath%"
+                },
+                "properties": {
+                  "pipeCwd": {
+                    "type": "string",
+                    "description": "%c_cpp.debuggers.pipeTransport.pipeCwd.description%",
+                    "default": "/usr/bin"
+                  },
+                  "pipeProgram": {
+                    "type": "string",
+                    "description": "%c_cpp.debuggers.pipeTransport.pipeProgram.description%",
+                    "default": "%c_cpp.debuggers.pipeTransport.default.pipeProgram%"
+                  },
+                  "pipeArgs": {
+                    "type": "array",
+                    "description": "%c_cpp.debuggers.pipeTransport.pipeArgs.description%",
+                    "items": {
+                      "type": "string"
+                    },
+                    "default": []
+                  },
+                  "debuggerPath": {
+                    "type": "string",
+                    "description": "%c_cpp.debuggers.pipeTransport.debuggerPath.description%",
+                    "default": "%c_cpp.debuggers.pipeTransport.default.debuggerPath%"
+                  },
+                  "pipeEnv": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "description": "%c_cpp.debuggers.pipeTransport.pipeEnv.description%",
+                    "default": {}
+                  },
+                  "quoteArgs": {
+                    "exceptions": {
+                      "type": "boolean",
+                      "description": "%c_cpp.debuggers.pipeTransport.quoteArgs.description%",
+                      "default": true
+                    }
+                  }
+                }
+              },
+              "setupCommands": {
+                "type": "array",
+                "description": "%c_cpp.debuggers.setupCommands.description%",
+                "items": {
+                  "type": "object",
+                  "default": {},
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "description": "%c_cpp.debuggers.text.description%",
+                      "default": ""
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "%c_cpp.debuggers.description.description%",
+                      "default": ""
+                    },
+                    "ignoreFailures": {
+                      "type": "boolean",
+                      "description": "%c_cpp.debuggers.ignoreFailures.description%",
+                      "default": false
+                    }
+                  }
+                },
+                "default": []
+              },
+              "symbolLoadInfo": {
+                "description": "%c_cpp.debuggers.symbolLoadInfo.description%",
+                "type": "object",
+                "default": {
+                  "loadAll": true,
+                  "exceptionList": ""
+                },
+                "properties": {
+                  "loadAll": {
+                    "type": "boolean",
+                    "description": "%c_cpp.debuggers.symbolLoadInfo.loadAll.description%",
+                    "default": true
+                  },
+                  "exceptionList": {
+                    "type": "string",
+                    "description": "%c_cpp.debuggers.symbolLoadInfo.exceptionList.description%",
+                    "default": ""
+                  }
+                }
+              },
+              "variables": {
+                "type": "object",
+                "description": "%c_cpp.debuggers.variables.description%",
+                "default": {
+                  "<variable-name>": "<variable-value>"
+                },
+                "properties": {},
+                "additionalProperties": {
+                  "type": "string",
+                  "description": "%c_cpp.debuggers.variables.properties.description%",
+                  "default": ""
+                }
+              },
+              "deploySteps": {
+                "type": "array",
+                "description": "%c_cpp.debuggers.deploySteps.description%",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "description": "%c_cpp.debuggers.deploySteps.copyFile.description%",
+                      "default": {},
+                      "required": [
+                        "type",
+                        "files",
+                        "host",
+                        "targetDir"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.copyFile.description%",
+                          "default": "",
+                          "enum": [
+                            "scp",
+                            "rsync"
+                          ]
+                        },
+                        "files": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "%c_cpp.debuggers.deploySteps.copyFile.files.description%",
+                          "default": ""
+                        },
+                        "host": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "description": "%c_cpp.debuggers.host.description%",
+                              "default": "hello@microsoft.com"
+                            },
+                            {
+                              "type": "object",
+                              "description": "%c_cpp.debuggers.host.description%",
+                              "default": {},
+                              "required": [
+                                "hostName"
+                              ],
+                              "properties": {
+                                "user": {
+                                  "type": "string",
+                                  "description": "%c_cpp.debuggers.host.user.description%",
+                                  "default": ""
+                                },
+                                "hostName": {
+                                  "type": "string",
+                                  "description": "%c_cpp.debuggers.host.hostName.description%",
+                                  "default": ""
+                                },
+                                "port": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "string",
+                                      "pattern": "^\\d+$|^\\${.+}$"
+                                    }
+                                  ],
+                                  "description": "%c_cpp.debuggers.host.port.description%",
+                                  "default": 22
+                                },
+                                "jumpHosts": {
+                                  "type": "array",
+                                  "description": "%c_cpp.debuggers.host.jumpHost.description%",
+                                  "items": {
+                                    "type": "object",
+                                    "default": {},
+                                    "required": [
+                                      "hostName"
+                                    ],
+                                    "properties": {
+                                      "user": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.user.description%",
+                                        "default": ""
+                                      },
+                                      "hostName": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.hostName.description%",
+                                        "default": ""
+                                      },
+                                      "port": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "string",
+                                            "pattern": "^\\d+$|^\\${.+}$"
+                                          }
+                                        ],
+                                        "description": "%c_cpp.debuggers.host.port.description%",
+                                        "default": 22
+                                      }
+                                    }
+                                  }
+                                },
+                                "localForwards": {
+                                  "type": "array",
+                                  "description": "%c_cpp.debuggers.host.localForward.description%",
+                                  "items": {
+                                    "type": "object",
+                                    "default": {},
+                                    "properties": {
+                                      "bindAddress": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.bindAddress.description%",
+                                        "default": ""
+                                      },
+                                      "port": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "string",
+                                            "pattern": "^\\d+$|^\\${.+}$"
+                                          }
+                                        ],
+                                        "description": "%c_cpp.debuggers.host.localForward.port.description%"
+                                      },
+                                      "host": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.host.description%",
+                                        "default": ""
+                                      },
+                                      "hostPort": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "string",
+                                            "pattern": "^\\d+$|^\\${.+}$"
+                                          }
+                                        ],
+                                        "description": "%c_cpp.debuggers.host.localForward.hostPort.description%"
+                                      },
+                                      "localSocket": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.localSocket.description%",
+                                        "default": ""
+                                      },
+                                      "remoteSocket": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.remoteSocket.description%",
+                                        "default": ""
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "targetDir": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.copyFile.targetDir.description%",
+                          "default": ""
+                        },
+                        "recursive": {
+                          "type": "boolean",
+                          "description": "%c_cpp.debuggers.deploySteps.copyFile.recursive.description%",
+                          "default": "true"
+                        },
+                        "debug": {
+                          "type": "boolean",
+                          "description": "%c_cpp.debuggers.deploySteps.debug%"
+                        }
+                      },
+                      "allOf": [
+                        {
+                          "if": {
+                            "properties": {
+                              "type": {
+                                "const": "scp"
+                              }
+                            }
+                          },
+                          "then": {
+                            "properties": {
+                              "scpPath": {
+                                "type": "string",
+                                "description": "%c_cpp.debuggers.deploySteps.copyFile.scpPath.description%",
+                                "default": ""
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "type": {
+                                "const": "rsync"
+                              }
+                            }
+                          },
+                          "then": {
+                            "properties": {
+                              "rsyncPath": {
+                                "type": "string",
+                                "description": "%c_cpp.debuggers.deploySteps.copyFile.rsyncPath.description%",
+                                "default": ""
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "description": "%c_cpp.debuggers.deploySteps.ssh.description%",
+                      "default": {},
+                      "required": [
+                        "type",
+                        "host",
+                        "command"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.ssh.description%",
+                          "default": "",
+                          "enum": [
+                            "ssh"
+                          ]
+                        },
+                        "host": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "description": "%c_cpp.debuggers.host.description%",
+                              "default": "hello@microsoft.com"
+                            },
+                            {
+                              "type": "object",
+                              "description": "%c_cpp.debuggers.host.description%",
+                              "default": {},
+                              "required": [
+                                "hostName"
+                              ],
+                              "properties": {
+                                "user": {
+                                  "type": "string",
+                                  "description": "%c_cpp.debuggers.host.user.description%",
+                                  "default": ""
+                                },
+                                "hostName": {
+                                  "type": "string",
+                                  "description": "%c_cpp.debuggers.host.hostName.description%",
+                                  "default": ""
+                                },
+                                "port": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "string",
+                                      "pattern": "^\\d+$|^\\${.+}$"
+                                    }
+                                  ],
+                                  "description": "%c_cpp.debuggers.host.port.description%",
+                                  "default": 22
+                                },
+                                "jumpHosts": {
+                                  "type": "array",
+                                  "description": "%c_cpp.debuggers.host.jumpHost.description%",
+                                  "items": {
+                                    "type": "object",
+                                    "default": {},
+                                    "required": [
+                                      "hostName"
+                                    ],
+                                    "properties": {
+                                      "user": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.user.description%",
+                                        "default": ""
+                                      },
+                                      "hostName": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.hostName.description%",
+                                        "default": ""
+                                      },
+                                      "port": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "string",
+                                            "pattern": "^\\d+$|^\\${.+}$"
+                                          }
+                                        ],
+                                        "description": "%c_cpp.debuggers.host.port.description%",
+                                        "default": 22
+                                      }
+                                    }
+                                  }
+                                },
+                                "localForwards": {
+                                  "type": "array",
+                                  "description": "%c_cpp.debuggers.host.localForward.description%",
+                                  "items": {
+                                    "type": "object",
+                                    "default": {},
+                                    "properties": {
+                                      "bindAddress": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.bindAddress.description%",
+                                        "default": ""
+                                      },
+                                      "port": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "string",
+                                            "pattern": "^\\d+$|^\\${.+}$"
+                                          }
+                                        ],
+                                        "description": "%c_cpp.debuggers.host.localForward.port.description%"
+                                      },
+                                      "host": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.host.description%",
+                                        "default": ""
+                                      },
+                                      "hostPort": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "string",
+                                            "pattern": "^\\d+$|^\\${.+}$"
+                                          }
+                                        ],
+                                        "description": "%c_cpp.debuggers.host.localForward.hostPort.description%"
+                                      },
+                                      "localSocket": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.localSocket.description%",
+                                        "default": ""
+                                      },
+                                      "remoteSocket": {
+                                        "type": "string",
+                                        "description": "%c_cpp.debuggers.host.localForward.remoteSocket.description%",
+                                        "default": ""
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "command": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.ssh.command.description%",
+                          "default": ""
+                        },
+                        "sshPath": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.ssh.sshPath.description%",
+                          "default": ""
+                        },
+                        "continueOn": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.continueOn.description%",
+                          "default": ""
+                        },
+                        "debug": {
+                          "type": "boolean",
+                          "description": "%c_cpp.debuggers.deploySteps.debug%"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "description": "%c_cpp.debuggers.deploySteps.shell.description%",
+                      "default": {},
+                      "required": [
+                        "type",
+                        "command"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.shell.description%",
+                          "default": "",
+                          "enum": [
+                            "shell"
+                          ]
+                        },
+                        "command": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.shell.command.description%",
+                          "default": ""
+                        },
+                        "continueOn": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.deploySteps.continueOn.description%",
+                          "default": ""
+                        },
+                        "debug": {
+                          "type": "boolean",
+                          "description": "%c_cpp.debuggers.deploySteps.debug%"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "description": "%c_cpp.debuggers.vsCodeCommand.description%",
+                      "default": {},
+                      "required": [
+                        "type",
+                        "command"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.vsCodeCommand.description%",
+                          "default": "",
+                          "enum": [
+                            "command"
+                          ]
+                        },
+                        "command": {
+                          "type": "string",
+                          "description": "%c_cpp.debuggers.vsCodeCommand.command.description%",
+                          "default": ""
+                        },
+                        "args": {
+                          "type": "array",
+                          "description": "%c_cpp.debuggers.vsCodeCommand.args.description%",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "default": []
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "name": "C/C++ Debug (gdb Launch)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "enter program name, for example: ${workspaceFolder}/a.out",
+            "args": [],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "MIMode": "gdb",
+            "setupCommands": [
+              {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+              }
+            ]
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "C/C++ Debug (gdb Launch)",
+            "description": "Launch a C/C++ program",
+            "body": {
+              "name": "C/C++ Debug (gdb Launch)",
+              "type": "cppdbg",
+              "request": "launch",
+              "program": "^\"enter program name, for example: \\${workspaceFolder}/a.out\"",
+              "args": [],
+              "stopAtEntry": true,
+              "cwd": "^\"\\${workspaceFolder}\"",
+              "environment": [],
+              "MIMode": "gdb",
+              "setupCommands": [
+                {
+                  "description": "Enable pretty-printing for gdb",
+                  "text": "-enable-pretty-printing",
+                  "ignoreFailures": true
+                }
+              ]
+            }
+          },
+          {
+            "label": "C/C++ Debug (gdb Attach)",
+            "description": "Attach to a running C/C++ program",
+            "body": {
+              "name": "C/C++ Debug (gdb Attach)",
+              "type": "cppdbg",
+              "request": "attach",
+              "program": "^\"enter program name, for example: \\${workspaceFolder}/a.out\"",
+              "processId": "^\"\\${command:pickProcess}\"",
+              "MIMode": "gdb",
+              "setupCommands": [
+                {
+                  "description": "Enable pretty-printing for gdb",
+                  "text": "-enable-pretty-printing",
+                  "ignoreFailures": true
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
     "breakpoints": [
+      {
+        "language": "ada"
+      },
       {
         "language": "c"
       },
@@ -26,1084 +1874,13 @@
         "language": "cpp"
       },
       {
-        "language": "d"
+        "language": "cuda-cpp"
       },
       {
-        "language": "objective-c"
-      },
-      {
-        "language": "fortran"
-      },
-      {
-        "language": "fortran-modern"
-      },
-      {
-        "language": "fortran90"
-      },
-      {
-        "language": "fortran_free-form"
-      },
-      {
-        "language": "fortran_fixed-form"
+        "language": "cuda"
       },
       {
         "language": "rust"
-      },
-      {
-        "language": "pascal"
-      },
-      {
-        "language": "objectpascal"
-      },
-      {
-        "language": "ada"
-      },
-      {
-        "language": "nim"
-      },
-      {
-        "language": "arm"
-      },
-      {
-        "language": "asm"
-      },
-      {
-        "language": "vala"
-      },
-      {
-        "language": "crystal"
-      },
-      {
-        "language": "kotlin"
-      },
-      {
-        "language": "zig"
-      },
-      {
-        "language": "riscv"
-      }
-    ],
-    "debuggers": [
-      {
-        "type": "gdb",
-        "program": "./out/src/gdb.js",
-        "runtime": "node",
-        "label": "GDB",
-        "languages": [
-          "c",
-          "cpp",
-          "d",
-          "objective-c",
-          "fortran",
-          "fortran-modern",
-          "fortran90",
-          "fortran_free-form",
-          "fortran_fixed-form",
-          "rust",
-          "pascal",
-          "objectpascal",
-          "ada",
-          "nim",
-          "arm",
-          "asm",
-          "vala",
-          "crystal",
-          "kotlin",
-          "zig",
-          "riscv"
-        ],
-        "variables": {
-          "FileBasenameNoExt": "code-debug.getFileBasenameNoExt",
-          "FileNameNoExt": "code-debug.getFileNameNoExt"
-        },
-        "configurationAttributes": {
-          "launch": {
-            "required": [
-              "target",
-              "cwd"
-            ],
-            "properties": {
-              "target": {
-                "type": "string",
-                "description": "Path of executable"
-              },
-              "arguments": {
-                "type": "string",
-                "description": "Arguments to append after the executable. You can also use pipes."
-              },
-              "terminal": {
-                "type": "string",
-                "description": "Leave this field undefined to keep program output in the vscode console at the bottom. If this is set to empty string the program will spawn in a new console using x-terminal-emulator on linux, otherwise with the specified terminal. On windows setting this to an empty string spawns the program in a console, but no other console is supported."
-              },
-              "cwd": {
-                "type": "string",
-                "description": "project path"
-              },
-              "gdbpath": {
-                "type": "string",
-                "description": "Path to the gdb executable or the command if in PATH",
-                "default": "gdb"
-              },
-              "env": {
-                "type": "object",
-                "description": "Environment overriding the gdb (and in turn also the process) environment",
-                "default": null
-              },
-              "debugger_args": {
-                "type": "array",
-                "description": "Additional arguments to pass to GDB",
-                "default": []
-              },
-              "pathSubstitutions": {
-                "type": "object",
-                "description": "Help GDB find your source using path substitutions (GDB `substitute-path)` variable",
-                "default": {
-                  "<fromPath>": "<toPath>"
-                }
-              },
-              "valuesFormatting": {
-                "type": "string",
-                "description": "Set the way of showing variable values. 'disabled' - show value as is, 'parseText' - parse debuggers output text into structure, 'prettyPrinters' - enable debuggers custom pretty-printers if there are any",
-                "default": "prettyPrinters",
-                "enum": [
-                  "disabled",
-                  "parseText",
-                  "prettyPrinters"
-                ]
-              },
-              "frameFilters": {
-                "type": "boolean",
-                "description": "Use frame filters registered in GDB",
-                "default": true
-              },
-              "printCalls": {
-                "type": "boolean",
-                "description": "Prints all GDB calls to the console",
-                "default": false
-              },
-              "showDevDebugOutput": {
-                "type": "boolean",
-                "description": "Prints all GDB responses to the console",
-                "default": false
-              },
-              "autorun": {
-                "type": "array",
-                "description": "GDB commands to run when starting to debug",
-                "default": []
-              },
-              "stopAtEntry": {
-                "type": [
-                  "boolean",
-                  "string"
-                ],
-                "description": "Whether debugger should stop at application entry point",
-                "default": false
-              },
-              "ssh": {
-                "required": [
-                  "host",
-                  "user",
-                  "cwd"
-                ],
-                "type": "object",
-                "description": "If this is set then the extension will connect to an ssh host and run GDB there",
-                "properties": {
-                  "host": {
-                    "type": "string",
-                    "description": "Remote host name/ip to connect to"
-                  },
-                  "port": {
-                    "type": [
-                      "number",
-                      "string"
-                    ],
-                    "description": "Remote port number",
-                    "default": 22
-                  },
-                  "user": {
-                    "type": "string",
-                    "description": "Username to connect as"
-                  },
-                  "password": {
-                    "type": "string",
-                    "description": "Plain text password (unsafe; if possible use keyfile instead)"
-                  },
-                  "keyfile": {
-                    "type": "string",
-                    "description": "Absolute path to private key"
-                  },
-                  "useAgent": {
-                    "type": "boolean",
-                    "description": "Auto-detect the running SSH agent (via SSH_AUTH_SOCK environment variable) and use it to perform authentication",
-                    "default": false
-                  },
-                  "sourceFileMap": {
-                    "type": "object",
-                    "description": "Mapping of source paths (from GDB on ssh remote) to local (IDE) paths.",
-                    "default": {
-                      "<sourcePath>": "<localPath>"
-                    }
-                  },
-                  "cwd": {
-                    "type": "string",
-                    "description": "Working directory for the debugger.\nIf `ssh.sourceFileMap` is not set, then this is also the project path on the remote for mapping with `cwd`."
-                  },
-                  "forwardX11": {
-                    "type": "boolean",
-                    "description": "If true, the server will redirect x11 to the local host",
-                    "default": true
-                  },
-                  "x11port": {
-                    "type": [
-                      "number",
-                      "string"
-                    ],
-                    "description": "TCP port to redirect X11 data to (by default port = display + 6000); raw display number for unix domain connection",
-                    "default": 6000
-                  },
-                  "x11host": {
-                    "type": "string",
-                    "description": "Hostname/ip to redirect X11 data to; empty string for a unix domain connection",
-                    "default": "localhost"
-                  },
-                  "remotex11screen": {
-                    "type": "number",
-                    "description": "Screen to start the application on the remote side",
-                    "default": 0
-                  },
-                  "bootstrap": {
-                    "type": "string",
-                    "description": "Content will be executed on the SSH host before the debugger call."
-                  }
-                }
-              },
-              "registerLimit": {
-                "type": "string",
-                "description": "List of numbers specifying the registers to display. An empty string indicates that the contents of all the registers must be returned.",
-                "default": ""
-              }
-            }
-          },
-          "attach": {
-            "required": [
-              "target",
-              "cwd"
-            ],
-            "properties": {
-              "target": {
-                "type": "string",
-                "description": "PID of running program or program name or connection arguments (eg :2345) if remote is true"
-              },
-              "remote": {
-                "type": "boolean",
-                "description": "If true this will connect to a gdbserver instead of attaching to a PID",
-                "default": false
-              },
-              "valuesFormatting": {
-                "type": "string",
-                "description": "Set the way of showing variable values. 'disabled' - show value as is, 'parseText' - parse debuggers output text into structure, 'prettyPrinters' - enable debuggers custom pretty-printers if there are any",
-                "default": "parseText",
-                "enum": [
-                  "disabled",
-                  "parseText",
-                  "prettyPrinters"
-                ]
-              },
-              "frameFilters": {
-                "type": "boolean",
-                "description": "Use frame filters registered in GDB",
-                "default": true
-              },
-              "printCalls": {
-                "type": "boolean",
-                "description": "Prints all GDB calls to the console",
-                "default": false
-              },
-              "showDevDebugOutput": {
-                "type": "boolean",
-                "description": "Prints all GDB responses to the console",
-                "default": false
-              },
-              "executable": {
-                "type": "string",
-                "description": "Path of executable for debugging symbols"
-              },
-              "gdbpath": {
-                "type": "string",
-                "description": "Path to the gdb executable or the command if in PATH",
-                "default": "gdb"
-              },
-              "env": {
-                "type": "object",
-                "description": "Environment overriding the gdb (and in turn also the process) environment",
-                "default": null
-              },
-              "debugger_args": {
-                "type": "array",
-                "description": "Additional arguments to pass to GDB",
-                "default": []
-              },
-              "pathSubstitutions": {
-                "type": "object",
-                "description": "Help GDB find your source using path substitutions (GDB `substitute-path)` variable",
-                "default": {
-                  "<fromPath>": "<toPath>"
-                }
-              },
-              "cwd": {
-                "type": "string",
-                "description": "project path",
-                "default": "${workspaceRoot}"
-              },
-              "autorun": {
-                "type": "array",
-                "description": "GDB commands to run when starting to debug",
-                "default": []
-              },
-              "stopAtConnect": {
-                "type": "boolean",
-                "description": "Whether debugger should stop after connecting to target",
-                "default": false
-              },
-              "stopAtEntry": {
-                "type": [
-                  "boolean",
-                  "string"
-                ],
-                "description": "Whether debugger should stop at application entry point",
-                "default": false
-              },
-              "ssh": {
-                "required": [
-                  "host",
-                  "cwd",
-                  "user"
-                ],
-                "type": "object",
-                "description": "If this is set then the extension will connect to an ssh host and run GDB there",
-                "properties": {
-                  "host": {
-                    "type": "string",
-                    "description": "Remote host name/ip to connect to"
-                  },
-                  "port": {
-                    "type": [
-                      "number",
-                      "string"
-                    ],
-                    "description": "Remote port number",
-                    "default": 22
-                  },
-                  "user": {
-                    "type": "string",
-                    "description": "Username to connect as"
-                  },
-                  "password": {
-                    "type": "string",
-                    "description": "Plain text password (unsafe; if possible use keyfile instead)"
-                  },
-                  "keyfile": {
-                    "type": "string",
-                    "description": "Absolute path to private key"
-                  },
-                  "useAgent": {
-                    "type": "boolean",
-                    "description": "Auto-detect the running SSH agent (via SSH_AUTH_SOCK environment variable) and use it to perform authentication",
-                    "default": false
-                  },
-                  "sourceFileMap": {
-                    "type": "object",
-                    "description": "Mapping of source paths (from GDB on ssh remote) to local (IDE) paths.",
-                    "default": {
-                      "<sourcePath>": "<localPath>"
-                    }
-                  },
-                  "cwd": {
-                    "type": "string",
-                    "description": "Working directory for the debugger.\nIf `ssh.sourceFileMap` is not set, then this is also the project path on the remote for mapping with `cwd`."
-                  },
-                  "forwardX11": {
-                    "type": "boolean",
-                    "description": "If true, the server will redirect x11 to the local host",
-                    "default": true
-                  },
-                  "x11port": {
-                    "type": [
-                      "number",
-                      "string"
-                    ],
-                    "description": "TCP port to redirect X11 data to (by default port = display + 6000); raw display number for unix domain connection",
-                    "default": 6000
-                  },
-                  "x11host": {
-                    "type": "string",
-                    "description": "Hostname/ip to redirect X11 data to; empty string for a unix domain connection",
-                    "default": "localhost"
-                  },
-                  "remotex11screen": {
-                    "type": "number",
-                    "description": "Screen to start the application on the remote side",
-                    "default": 0
-                  },
-                  "bootstrap": {
-                    "type": "string",
-                    "description": "Content will be executed on the SSH host before the debugger call."
-                  }
-                }
-              },
-              "registerLimit": {
-                "type": "string",
-                "description": "List of numbers specifying the registers to display. An empty string indicates that the contents of all the registers must be returned.",
-                "default": ""
-              }
-            }
-          }
-        },
-        "initialConfigurations": [
-          {
-            "name": "Debug",
-            "type": "gdb",
-            "request": "launch",
-            "target": "./bin/executable",
-            "cwd": "${workspaceRoot}",
-            "valuesFormatting": "parseText"
-          }
-        ],
-        "configurationSnippets": [
-          {
-            "label": "GDB: Launch Program",
-            "description": "Starts the program using gdb",
-            "body": {
-              "type": "gdb",
-              "request": "launch",
-              "name": "${2:Launch Program}",
-              "target": "${1:./bin/executable}",
-              "cwd": "^\"\\${workspaceRoot}\"",
-              "valuesFormatting": "parseText"
-            }
-          },
-          {
-            "label": "GDB: Attach to PID",
-            "description": "Attaches to a running program pid using gdb",
-            "body": {
-              "type": "gdb",
-              "request": "attach",
-              "name": "${2:Attach to PID}",
-              "target": "${1:[PID]}",
-              "cwd": "^\"\\${workspaceRoot}\"",
-              "valuesFormatting": "parseText"
-            }
-          },
-          {
-            "label": "GDB: Connect to gdbserver",
-            "description": "Connects to a gdbserver for debugging",
-            "body": {
-              "type": "gdb",
-              "request": "attach",
-              "name": "${3:Attach to gdbserver}",
-              "executable": "${1:./bin/executable}",
-              "target": ":${2:2345}",
-              "remote": true,
-              "cwd": "^\"\\${workspaceRoot}\"",
-              "valuesFormatting": "parseText"
-            }
-          },
-          {
-            "label": "GDB: Launch over SSH",
-            "description": "Remotely starts the program using gdb",
-            "body": {
-              "type": "gdb",
-              "request": "launch",
-              "name": "${6:Launch Program (SSH)}",
-              "target": "${1:./bin/executable}",
-              "cwd": "^\"\\${workspaceRoot}\"",
-              "ssh": {
-                "host": "${2:127.0.0.1}",
-                "cwd": "${3:/tmp/working}",
-                "keyfile": "${4:/home/my_user/.ssh/id_rsa}",
-                "user": "${5:remote_user}",
-                "sourceFileMap": {
-                  "${6:/home/remote_user/project/}": "^\"\\${workspaceRoot}\""
-                }
-              },
-              "valuesFormatting": "parseText"
-            }
-          },
-          {
-            "label": "GDB: Launch GUI over SSH with X11 forwarding",
-            "description": "Remotely starts the program using gdb with X11 forwarding",
-            "body": {
-              "type": "gdb",
-              "request": "launch",
-              "name": "${6:Launch Program (SSH + X11)}",
-              "target": "${1:./bin/executable}",
-              "cwd": "^\"\\${workspaceRoot}\"",
-              "ssh": {
-                "host": "${2:127.0.0.1}",
-                "cwd": "${3:/home/remote_user/project/}",
-                "keyfile": "${4:/home/my_user/.ssh/id_rsa}",
-                "user": "${5:remote_user}",
-                "forwardX11": true,
-                "x11host": "localhost",
-                "x11port": 6000
-              },
-              "valuesFormatting": "parseText"
-            }
-          },
-          {
-            "label": "GDB: Debug external embedded device",
-            "description": "Debugs an embedded microcontroller supported by GDB by attaching over extended-remote",
-            "body": {
-              "type": "gdb",
-              "request": "attach",
-              "name": "${6:Debug Microcontroller}",
-              "target": "extended-remote ${2:/dev/cu.usbmodem00000000}",
-              "executable": "${1:./bin/executable.elf}",
-              "cwd": "^\"\\${workspaceRoot}\"",
-              "autorun": [
-                "monitor tpwr enable",
-                "monitor swdp_scan",
-                "attach 1",
-                "load ${1:./bin/executable.elf}"
-              ]
-            },
-            "valuesFormatting": "parseText"
-          }
-        ]
-      },
-      {
-        "type": "lldb-mi",
-        "program": "./out/src/lldb.js",
-        "runtime": "node",
-        "label": "LLDB",
-        "languages": [
-          "c",
-          "cpp",
-          "d",
-          "objective-c",
-          "fortran",
-          "fortran-modern",
-          "fortran90",
-          "fortran_free-form",
-          "fortran_fixed-form",
-          "rust",
-          "pascal",
-          "objectpascal",
-          "ada",
-          "nim",
-          "arm",
-          "asm",
-          "vala",
-          "crystal",
-          "kotlin",
-          "zig",
-          "riscv"
-        ],
-        "variables": {
-          "FileBasenameNoExt": "code-debug.getFileBasenameNoExt",
-          "FileNameNoExt": "code-debug.getFileNameNoExt"
-        },
-        "configurationAttributes": {
-          "launch": {
-            "required": [
-              "target"
-            ],
-            "properties": {
-              "target": {
-                "type": "string",
-                "description": "Path of executable"
-              },
-              "arguments": {
-                "type": "string",
-                "description": "Arguments to append after the executable"
-              },
-              "cwd": {
-                "type": "string",
-                "description": "project path"
-              },
-              "lldbmipath": {
-                "type": "string",
-                "description": "Path to the lldb-mi executable or the command if in PATH",
-                "default": "lldb-mi"
-              },
-              "env": {
-                "type": "object",
-                "description": "Environment overriding the lldb-mi (and in turn also the process) environment",
-                "default": null
-              },
-              "debugger_args": {
-                "type": "array",
-                "description": "Additional arguments to pass to LLDB",
-                "default": []
-              },
-              "pathSubstitutions": {
-                "type": "object",
-                "description": "Help LLDB find your source using path substitutions (LLDB `target.source-map)` variable",
-                "default": {
-                  "<fromPath>": "<toPath>"
-                }
-              },
-              "valuesFormatting": {
-                "type": "string",
-                "description": "Set the way of showing variable values. 'disabled' - show value as is, 'parseText' - parse debuggers output text into structure, 'prettyPrinters' - enable debuggers custom pretty-printers if there are any",
-                "default": "parseText",
-                "enum": [
-                  "disabled",
-                  "parseText",
-                  "prettyPrinters"
-                ]
-              },
-              "printCalls": {
-                "type": "boolean",
-                "description": "Prints all lldb calls to the console",
-                "default": false
-              },
-              "showDevDebugOutput": {
-                "type": "boolean",
-                "description": "Prints all lldb responses to the console",
-                "default": false
-              },
-              "autorun": {
-                "type": "array",
-                "description": "lldb commands to run when starting to debug",
-                "default": []
-              },
-              "stopAtEntry": {
-                "type": [
-                  "boolean",
-                  "string"
-                ],
-                "description": "Whether debugger should stop at application entry point",
-                "default": false
-              },
-              "ssh": {
-                "required": [
-                  "host",
-                  "cwd",
-                  "user"
-                ],
-                "type": "object",
-                "description": "If this is set then the extension will connect to an ssh host and run lldb there",
-                "properties": {
-                  "host": {
-                    "type": "string",
-                    "description": "Remote host name/ip to connect to"
-                  },
-                  "port": {
-                    "type": [
-                      "number",
-                      "string"
-                    ],
-                    "description": "Remote port number",
-                    "default": 22
-                  },
-                  "user": {
-                    "type": "string",
-                    "description": "Username to connect as"
-                  },
-                  "password": {
-                    "type": "string",
-                    "description": "Plain text password (unsafe; if possible use keyfile instead)"
-                  },
-                  "keyfile": {
-                    "type": "string",
-                    "description": "Absolute path to private key"
-                  },
-                  "useAgent": {
-                    "type": "boolean",
-                    "description": "Auto-detect the running SSH agent (via SSH_AUTH_SOCK environment variable) and use it to perform authentication",
-                    "default": false
-                  },
-                  "sourceFileMap": {
-                    "type": "object",
-                    "description": "Mapping of source paths (from GDB on ssh remote) to local (IDE) paths.",
-                    "default": {
-                      "<sourcePath>": "<localPath>"
-                    }
-                  },
-                  "cwd": {
-                    "type": "string",
-                    "description": "Working directory for the debugger.\nIf `ssh.sourceFileMap` is not set, then this is also the project path on the remote for mapping with `cwd`."
-                  },
-                  "forwardX11": {
-                    "type": "boolean",
-                    "description": "If true, the server will redirect x11 to the local host",
-                    "default": true
-                  },
-                  "x11host": {
-                    "type": "string",
-                    "description": "Hostname/ip to redirect X11 data to; empty string for a unix domain connection",
-                    "default": "localhost"
-                  },
-                  "x11port": {
-                    "type": [
-                      "number",
-                      "string"
-                    ],
-                    "description": "TCP port to redirect X11 data to (by default port = display + 6000); raw display number for unix domain connection",
-                    "default": 6000
-                  },
-                  "remotex11screen": {
-                    "type": "number",
-                    "description": "Screen to start the application on the remote side",
-                    "default": 0
-                  },
-                  "bootstrap": {
-                    "type": "string",
-                    "description": "Content will be executed on the SSH host before the debugger call."
-                  }
-                }
-              },
-              "registerLimit": {
-                "type": "string",
-                "description": "List of numbers specifying the registers to display. An empty string indicates that the contents of all the registers must be returned.",
-                "default": ""
-              }
-            }
-          },
-          "attach": {
-            "required": [
-              "target"
-            ],
-            "properties": {
-              "target": {
-                "type": "string",
-                "description": "PID of running program or program name"
-              },
-              "valuesFormatting": {
-                "type": "string",
-                "description": "Set the way of showing variable values. 'disabled' - show value as is, 'parseText' - parse debuggers output text into structure, 'prettyPrinters' - enable debuggers custom pretty-printers if there are any",
-                "default": "parseText",
-                "enum": [
-                  "disabled",
-                  "parseText",
-                  "prettyPrinters"
-                ]
-              },
-              "printCalls": {
-                "type": "boolean",
-                "description": "Prints all LLDB calls to the console",
-                "default": false
-              },
-              "showDevDebugOutput": {
-                "type": "boolean",
-                "description": "Prints all LLDB responses to the console",
-                "default": false
-              },
-              "executable": {
-                "type": "string",
-                "description": "Path of executable for debugging symbols"
-              },
-              "lldbmipath": {
-                "type": "string",
-                "description": "Path to the lldb-mi executable or the command if in PATH",
-                "default": "lldb-mi"
-              },
-              "env": {
-                "type": "object",
-                "description": "Environment overriding the lldb-mi (and in turn also the process) environment",
-                "default": null
-              },
-              "debugger_args": {
-                "type": "array",
-                "description": "Additional arguments to pass to LLDB",
-                "default": []
-              },
-              "pathSubstitutions": {
-                "type": "object",
-                "description": "Help LLDB find your source using path substitutions (LLDB `target.source-map)` variable",
-                "default": {
-                  "<fromPath>": "<toPath>"
-                }
-              },
-              "cwd": {
-                "type": "string",
-                "description": "project path",
-                "default": "${workspaceRoot}"
-              },
-              "autorun": {
-                "type": "array",
-                "description": "lldb commands to run when starting to debug",
-                "default": []
-              },
-              "stopAtConnect": {
-                "type": "boolean",
-                "description": "Whether debugger should stop after connecting to target",
-                "default": false
-              },
-              "stopAtEntry": {
-                "type": [
-                  "boolean",
-                  "string"
-                ],
-                "description": "Whether debugger should stop at application entry point",
-                "default": false
-              },
-              "registerLimit": {
-                "type": "string",
-                "description": "List of numbers specifying the registers to display. An empty string indicates that the contents of all the registers must be returned.",
-                "default": ""
-              }
-            }
-          }
-        },
-        "initialConfigurations": [
-          {
-            "name": "Debug",
-            "type": "lldb-mi",
-            "request": "launch",
-            "target": "./bin/executable",
-            "cwd": "${workspaceRoot}",
-            "valuesFormatting": "parseText"
-          }
-        ],
-        "configurationSnippets": [
-          {
-            "label": "LLDB: Launch Program",
-            "description": "Starts the program using lldb-mi",
-            "body": {
-              "type": "lldb-mi",
-              "request": "launch",
-              "name": "${2:Launch Program}",
-              "target": "${1:./bin/executable}",
-              "cwd": "^\"\\${workspaceRoot}\"",
-              "valuesFormatting": "parseText"
-            }
-          },
-          {
-            "label": "LLDB: Attach to PID",
-            "description": "Attaches to a running program pid using lldb-mi",
-            "body": {
-              "type": "lldb-mi",
-              "request": "attach",
-              "name": "${2:Attach to PID}",
-              "target": "${1:[PID]}",
-              "cwd": "^\"\\${workspaceRoot}\"",
-              "valuesFormatting": "parseText"
-            }
-          },
-          {
-            "label": "LLDB: Launch over SSH",
-            "description": "Remotely starts the program using lldb-mi",
-            "body": {
-              "type": "lldb-mi",
-              "request": "launch",
-              "name": "${6:Launch Program (SSH)}",
-              "target": "${1:./bin/executable}",
-              "cwd": "^\"\\${workspaceRoot}\"",
-              "ssh": {
-                "host": "${2:127.0.0.1}",
-                "cwd": "${3:/home/remote_user/project/}",
-                "keyfile": "${4:/home/my_user/.ssh/id_rsa}",
-                "user": "${5:remote_user}"
-              },
-              "valuesFormatting": "parseText"
-            }
-          },
-          {
-            "label": "LLDB: Launch GUI over SSH with X11 forwarding",
-            "description": "Remotely starts the program using lldb-mi with X11 forwarding",
-            "body": {
-              "type": "lldb-mi",
-              "request": "launch",
-              "name": "${6:Launch Program (SSH + X11)}",
-              "target": "${1:./bin/executable}",
-              "cwd": "^\"\\${workspaceRoot}\"",
-              "ssh": {
-                "host": "${2:127.0.0.1}",
-                "cwd": "${3:/home/remote_user/project/}",
-                "keyfile": "${4:/home/my_user/.ssh/id_rsa}",
-                "user": "${5:remote_user}",
-                "forwardX11": true,
-                "x11host": "localhost",
-                "x11port": 6000
-              },
-              "valuesFormatting": "parseText"
-            }
-          }
-        ]
-      },
-      {
-        "type": "mago-mi",
-        "program": "./out/src/mago.js",
-        "runtime": "node",
-        "label": "Mago-MI",
-        "variables": {
-          "FileBasenameNoExt": "code-debug.getFileBasenameNoExt",
-          "FileNameNoExt": "code-debug.getFileNameNoExt"
-        },
-        "configurationAttributes": {
-          "launch": {
-            "required": [
-              "target"
-            ],
-            "properties": {
-              "target": {
-                "type": "string",
-                "description": "Path of executable"
-              },
-              "arguments": {
-                "type": "string",
-                "description": "Arguments to append after the executable"
-              },
-              "cwd": {
-                "type": "string",
-                "description": "project path"
-              },
-              "magomipath": {
-                "type": "string",
-                "description": "Path to the mago-mi executable or the command if in PATH",
-                "default": "mago-mi"
-              },
-              "env": {
-                "type": "object",
-                "description": "Environment overriding the mago-mi (and in turn also the process) environment",
-                "default": null
-              },
-              "debugger_args": {
-                "type": "array",
-                "description": "Additional arguments to pass to mago",
-                "default": []
-              },
-              "valuesFormatting": {
-                "type": "string",
-                "description": "Set the way of showing variable values. 'disabled' - show value as is, 'parseText' - parse debuggers output text into structure, 'prettyPrinters' - enable debuggers custom pretty-printers if there are any",
-                "default": "parseText",
-                "enum": [
-                  "disabled",
-                  "parseText",
-                  "prettyPrinters"
-                ]
-              },
-              "printCalls": {
-                "type": "boolean",
-                "description": "Prints all mago calls to the console",
-                "default": false
-              },
-              "showDevDebugOutput": {
-                "type": "boolean",
-                "description": "Prints all mago responses to the console",
-                "default": false
-              },
-              "autorun": {
-                "type": "array",
-                "description": "mago commands to run when starting to debug",
-                "default": []
-              },
-              "registerLimit": {
-                "type": "string",
-                "description": "List of numbers specifying the registers to display. An empty string indicates that the contents of all the registers must be returned.",
-                "default": ""
-              }
-            }
-          },
-          "attach": {
-            "required": [
-              "target"
-            ],
-            "properties": {
-              "target": {
-                "type": "string",
-                "description": "PID of running program or program name"
-              },
-              "valuesFormatting": {
-                "type": "string",
-                "description": "Set the way of showing variable values. 'disabled' - show value as is, 'parseText' - parse debuggers output text into structure, 'prettyPrinters' - enable debuggers custom pretty-printers if there are any",
-                "default": "parseText",
-                "enum": [
-                  "disabled",
-                  "parseText",
-                  "prettyPrinters"
-                ]
-              },
-              "printCalls": {
-                "type": "boolean",
-                "description": "Prints all mago calls to the console",
-                "default": false
-              },
-              "showDevDebugOutput": {
-                "type": "boolean",
-                "description": "Prints all mago responses to the console",
-                "default": false
-              },
-              "executable": {
-                "type": "string",
-                "description": "Path of executable for debugging symbols"
-              },
-              "magomipath": {
-                "type": "string",
-                "description": "Path to the mago-mi executable or the command if in PATH",
-                "default": "mago-mi"
-              },
-              "env": {
-                "type": "object",
-                "description": "Environment overriding the mago-mi (and in turn also the process) environment",
-                "default": null
-              },
-              "debugger_args": {
-                "type": "array",
-                "description": "Additional arguments to pass to mago",
-                "default": []
-              },
-              "cwd": {
-                "type": "string",
-                "description": "project path",
-                "default": "${workspaceRoot}"
-              },
-              "autorun": {
-                "type": "array",
-                "description": "mago commands to run when starting to debug",
-                "default": []
-              },
-              "stopAtConnect": {
-                "type": "boolean",
-                "description": "Whether debugger should stop after connecting to target",
-                "default": false
-              },
-              "registerLimit": {
-                "type": "string",
-                "description": "List of numbers specifying the registers to display. An empty string indicates that the contents of all the registers must be returned.",
-                "default": ""
-              }
-            }
-          }
-        },
-        "initialConfigurations": [
-          {
-            "name": "Debug",
-            "type": "mago-mi",
-            "request": "launch",
-            "target": "./bin/executable",
-            "cwd": "${workspaceRoot}",
-            "valuesFormatting": "parseText"
-          }
-        ],
-        "configurationSnippets": [
-          {
-            "label": "Mago: Launch Program",
-            "description": "Starts the program using mago-mi",
-            "body": {
-              "type": "mago-mi",
-              "request": "launch",
-              "name": "${2:Launch Program}",
-              "target": "${1:./bin/executable}",
-              "cwd": "^\"\\${workspaceRoot}\"",
-              "valuesFormatting": "parseText"
-            }
-          },
-          {
-            "label": "Mago: Attach to PID",
-            "description": "Attaches to a running program pid using mago-mi",
-            "body": {
-              "type": "mago-mi",
-              "request": "attach",
-              "name": "${2:Attach to PID}",
-              "target": "${1:[PID]}",
-              "cwd": "^\"\\${workspaceRoot}\"",
-              "valuesFormatting": "parseText"
-            }
-          }
-        ]
       }
     ]
   },

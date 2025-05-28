@@ -22,7 +22,7 @@
 			"type": "node",
 			"request": "launch",
 			"cwd": "${workspaceFolder}",
-			"program": "${workspaceRoot}/src/gdb.ts",
+			"program": "${workspaceRoot}/src/debugAdapter.ts",
 			"stopOnEntry": false,
 			"args": [
 				"--server=4711"

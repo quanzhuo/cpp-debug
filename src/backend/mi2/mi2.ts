@@ -70,7 +70,7 @@ class LogMessage {
 }
 
 export class MI2 extends EventEmitter implements IBackend {
-    constructor(public application: string, public preargs: string[], public extraargs: string[], procEnv: any, public extraCommands: string[] = []) {
+    constructor(public application: string, public preargs: string[], public extraargs: string[], procEnv: { [key: string]: string }, public extraCommands: string[] = []) {
         super();
 
         if (procEnv) {

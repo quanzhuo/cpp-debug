@@ -1,7 +1,6 @@
-import { MI2, escape } from "./mi2";
-import { Breakpoint } from "../backend";
 import * as ChildProcess from "child_process";
 import * as path from "path";
+import { MI2, escape } from "./mi2";
 
 export class MI2_LLDB extends MI2 {
     protected override initCommands(target: string, cwd: string, attach: boolean = false) {

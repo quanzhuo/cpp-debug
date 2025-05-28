@@ -9,7 +9,9 @@ import * as systemPath from "path";
 import { Breakpoint, MIError, ValuesFormattingMode, Variable, VariableObject } from './backend/backend';
 import { expandValue } from './backend/gdb_expansion';
 import { MI2 } from './backend/mi2/mi2';
+import { MI2_LLDB } from './backend/mi2/mi2lldb';
 import { MINode } from './backend/mi_parse';
+import { CppDbgAttachRequestArguments, CppDbgLaunchRequestArguments, SourceFileMapInfo } from './types';
 import { SourceFileMap } from "./source_file_map";
 
 class ExtendedVariable {
@@ -28,22 +30,23 @@ class VariableScope {
 
 export enum RunCommand { CONTINUE, RUN, NONE }
 
-export class MI2DebugSession extends DebugSession {
-    protected variableHandles = new Handles<VariableScope | string | VariableObject | ExtendedVariable>();
-    protected variableHandlesReverse: { [id: string]: number } = {};
-    protected scopeHandlesReverse: { [key: string]: number } = {};
-    protected useVarObjects: boolean = true;
-    protected quit: boolean = false;
-    protected attached: boolean = false;
-    protected initialRunCommand: RunCommand = RunCommand.RUN;
-    protected stopAtEntry: boolean | string = true;
-    protected isSSH: boolean = false;
-    protected sourceFileMap!: SourceFileMap;
-    protected started: boolean = false;
-    protected crashed: boolean = false;
-    protected miDebugger!: MI2;
-    protected commandServer?: net.Server;
-    protected serverPath!: string;
+export class CppDebugSession extends DebugSession {
+    private variableHandles = new Handles<VariableScope | string | VariableObject | ExtendedVariable>();
+    private variableHandlesReverse: { [id: string]: number } = {};
+    private scopeHandlesReverse: { [key: string]: number } = {};
+    private useVarObjects: boolean = true;
+    private quit: boolean = false;
+    private attached: boolean = false;
+    private initialRunCommand: RunCommand = RunCommand.RUN;
+    private stopAtEntry: boolean | string = true;
+    private isSSH: boolean = false;
+    private sourceFileMap!: SourceFileMap;
+    private started: boolean = false;
+    private crashed: boolean = false;
+    private miDebugger!: MI2;
+    private commandServer?: net.Server;
+    private serverPath!: string;
+    private miMode: 'gdb' | 'lldb' = 'gdb';
 
     public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
         super(debuggerLinesStartAt1, isServer);
@@ -186,6 +189,132 @@ export class MI2DebugSession extends DebugSession {
         this.handleMsg("stderr", "Could not start debugger process, does the program exist in filesystem?\n");
         this.handleMsg("stderr", err.toString() + "\n");
         this.quitEvent();
+    }
+
+    protected override initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
+        response.body = response.body || {};
+        response.body.supportsGotoTargetsRequest = true;
+        response.body.supportsHitConditionalBreakpoints = true;
+        response.body.supportsConfigurationDoneRequest = true;
+        response.body.supportsConditionalBreakpoints = true;
+        response.body.supportsFunctionBreakpoints = true;
+        response.body.supportsEvaluateForHovers = true;
+        response.body.supportsSetVariable = true;
+        response.body.supportsStepBack = true;
+        response.body.supportsLogPoints = true;
+        this.sendResponse(response);
+    }
+
+    protected override launchRequest(response: DebugProtocol.LaunchResponse, args: CppDbgLaunchRequestArguments): void {
+        this.miMode = args.MIMode ?? 'gdb';
+        let miDebuggerPath = args.miDebuggerPath;
+        if (!miDebuggerPath) {
+            miDebuggerPath = this.miMode === 'gdb' ? 'gdb' : 'lldb-mi';
+        }
+        if (!this.checkCommand(miDebuggerPath)) {
+            this.sendErrorResponse(response, 104, `Configured debugger ${miDebuggerPath} not found.`);
+            return;
+        }
+
+        let env: { [key: string]: string } = {};
+        if (args.environment) {
+            for (const item of args.environment) {
+                if (item && item.name) {
+                    env[item.name] = item.value;
+                }
+            }
+        }
+
+        // FIXME: split
+        const debuggerArgs: string[] = args.miDebuggerArgs ? args.miDebuggerArgs.split(' ') : [];
+        if (this.miMode === 'gdb') {
+            this.miDebugger = new MI2(miDebuggerPath, ["-q", "--interpreter=mi2"], debuggerArgs, env);
+        } else {
+            this.miDebugger = new MI2_LLDB(miDebuggerPath, [], debuggerArgs, env);
+        }
+
+
+        if (args.sourceFileMap) {
+            this.setSourceFileMapInfo(args.sourceFileMap);
+        }
+        this.initDebugger();
+        this.quit = false;
+        this.attached = false;
+        this.initialRunCommand = RunCommand.RUN;
+        this.isSSH = false;
+        this.started = false;
+        this.crashed = false;
+        this.setValuesFormattingMode('prettyPrinters');
+        this.miDebugger.frameFilters = true;
+        this.miDebugger.printCalls = args.logging ? true : false;
+        this.miDebugger.debugOutput = args.logging ? true : false;
+        this.stopAtEntry = args.stopAtEntry ?? false;
+        this.miDebugger.registerLimit = "";
+
+        const progArgs = (args.args ?? []).join(' ');
+        // TODO: change args.terminal to undefined is miMode === 'lldb'
+        this.miDebugger.load(args.cwd ?? '', args.program, progArgs, undefined, []).then(() => {
+            this.sendResponse(response);
+        }, err => {
+            this.sendErrorResponse(response, 103, `Failed to load MI Debugger: ${err.toString()}`);
+        });
+
+    }
+
+    protected override attachRequest(response: DebugProtocol.AttachResponse, args: CppDbgAttachRequestArguments): void {
+        const miMode = args.MIMode ?? 'gdb';
+        let miDebuggerPath = args.miDebuggerPath;
+        if (!miDebuggerPath) {
+            miDebuggerPath = miMode === 'gdb' ? 'gdb' : 'lldb-mi';
+        }
+
+        // FIXME: split
+        const debuggerArgs: string[] = args.miDebuggerArgs ? args.miDebuggerArgs.split(' ') : [];
+
+        // for attach, cpp debug doesn't support pass environment
+        if (miMode === 'gdb') {
+            this.miDebugger = new MI2(miDebuggerPath, ["-q", "--interpreter=mi2"], debuggerArgs, {});
+        } else {
+            this.miDebugger = new MI2_LLDB(miDebuggerPath, [], debuggerArgs, {});
+        }
+
+        if (args.sourceFileMap) {
+            this.setSourceFileMapInfo(args.sourceFileMap);
+        }
+        this.initDebugger();
+        this.quit = false;
+        this.attached = true;
+        this.initialRunCommand = RunCommand.NONE;
+        this.isSSH = false;
+        this.setValuesFormattingMode('prettyPrinters');
+        this.miDebugger.frameFilters = true;
+        this.miDebugger.printCalls = args.logging ? true : false;
+        this.miDebugger.debugOutput = args.logging ? true : false;
+        // FIXME: 针对 attach 类型，不应该有 stopAtEntry 设置项
+        this.stopAtEntry = false;
+        this.miDebugger.registerLimit = "";
+        this.miDebugger.attach('', args.program, args.program, []).then(() => {
+            this.sendResponse(response);
+        }, err => {
+            this.sendErrorResponse(response, 101, `Failed to attach: ${err.toString()}`);
+        });
+    }
+
+    private setSourceFileMapInfo(sourceFileMap: SourceFileMapInfo) {
+        const isGDB = this.miMode === 'gdb';
+        Object.entries(sourceFileMap).forEach(([source, value]) => {
+            const mappedPath = typeof value === 'string' ? value : value.editorPath;
+            if (isGDB) {
+                this.miDebugger.extraCommands.push(
+                    `gdb-set substitute-path "${escape(source)}" "${escape(mappedPath)}"`
+                );
+            } else {
+                this.miDebugger.extraCommands.push(
+                    `settings append target.source-map ${source} ${mappedPath}`
+                );
+            }
+        });
+
     }
 
     protected override disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
@@ -525,7 +654,7 @@ export class MI2DebugSession extends DebugSession {
                                         expanded = [
                                             {
                                                 name: "<value>",
-                                                value: prettyStringArray(expanded),
+                                                value: this.prettyStringArray(expanded),
                                                 variablesReference: 0
                                             }
                                         ];
@@ -572,7 +701,7 @@ export class MI2DebugSession extends DebugSession {
                             expanded = [
                                 {
                                     name: "<value>",
-                                    value: prettyStringArray(expanded),
+                                    value: this.prettyStringArray(expanded),
                                     variablesReference: 0
                                 }
                             ];
@@ -801,16 +930,17 @@ export class MI2DebugSession extends DebugSession {
         }
     }
 
-}
-
-function prettyStringArray(strings: any) {
-    if (typeof strings === "object") {
-        if (strings.length !== undefined) {
-            return strings.join(", ");
+    private prettyStringArray(strings: any) {
+        if (typeof strings === "object") {
+            if (strings.length !== undefined) {
+                return strings.join(", ");
+            } else {
+                return JSON.stringify(strings);
+            }
         } else {
-            return JSON.stringify(strings);
+            return strings;
         }
-    } else {
-        return strings;
     }
 }
+
+DebugSession.run(CppDebugSession);
