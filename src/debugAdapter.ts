@@ -52,7 +52,7 @@ export class CppDebugSession extends DebugSession {
         super(debuggerLinesStartAt1, isServer);
     }
 
-    protected initDebugger() {
+    private initDebugger() {
         this.miDebugger.on("launcherror", this.launchError.bind(this));
         this.miDebugger.on("quit", this.quitEvent.bind(this));
         this.miDebugger.on("exited-normally", this.quitEvent.bind(this));
@@ -100,7 +100,7 @@ export class CppDebugSession extends DebugSession {
     }
 
     // verifies that the specified command can be executed
-    protected checkCommand(debuggerName: string): boolean {
+    private checkCommand(debuggerName: string): boolean {
         try {
             const command = process.platform === 'win32' ? 'where' : 'command -v';
             execSync(`${command} ${debuggerName}`, { stdio: 'ignore' });
@@ -110,7 +110,7 @@ export class CppDebugSession extends DebugSession {
         }
     }
 
-    protected setValuesFormattingMode(mode: ValuesFormattingMode) {
+    private setValuesFormattingMode(mode: ValuesFormattingMode) {
         switch (mode) {
             case "disabled":
                 this.useVarObjects = true;
@@ -127,7 +127,7 @@ export class CppDebugSession extends DebugSession {
         }
     }
 
-    protected handleMsg(type: string, msg: string) {
+    private handleMsg(type: string, msg: string) {
         if (type === "target") {
             type = "stdout";
         }
@@ -137,25 +137,25 @@ export class CppDebugSession extends DebugSession {
         this.sendEvent(new OutputEvent(msg, type));
     }
 
-    protected handleBreakpoint(info: MINode) {
+    private handleBreakpoint(info: MINode) {
         const event = new StoppedEvent("breakpoint", parseInt(info.record("thread-id")));
         (event as DebugProtocol.StoppedEvent).body.allThreadsStopped = info.record("stopped-threads") === "all";
         this.sendEvent(event);
     }
 
-    protected handleBreak(info?: MINode) {
+    private handleBreak(info?: MINode) {
         const event = new StoppedEvent("step", info ? parseInt(info.record("thread-id")) : 1);
         (event as DebugProtocol.StoppedEvent).body.allThreadsStopped = info ? info.record("stopped-threads") === "all" : true;
         this.sendEvent(event);
     }
 
-    protected handlePause(info: MINode) {
+    private handlePause(info: MINode) {
         const event = new StoppedEvent("user request", parseInt(info.record("thread-id")));
         (event as DebugProtocol.StoppedEvent).body.allThreadsStopped = info.record("stopped-threads") === "all";
         this.sendEvent(event);
     }
 
-    protected stopEvent(info: MINode) {
+    private stopEvent(info: MINode) {
         if (!this.started) {
             this.crashed = true;
         }
@@ -166,15 +166,15 @@ export class CppDebugSession extends DebugSession {
         }
     }
 
-    protected threadCreatedEvent(info: MINode) {
+    private threadCreatedEvent(info: MINode) {
         this.sendEvent(new ThreadEvent("started", info.record("id")));
     }
 
-    protected threadExitedEvent(info: MINode) {
+    private threadExitedEvent(info: MINode) {
         this.sendEvent(new ThreadEvent("exited", info.record("id")));
     }
 
-    protected quitEvent() {
+    private quitEvent() {
         this.quit = true;
         this.sendEvent(new TerminatedEvent());
 
@@ -185,11 +185,13 @@ export class CppDebugSession extends DebugSession {
         }
     }
 
-    protected launchError(err: any) {
+    private launchError(err: any) {
         this.handleMsg("stderr", "Could not start debugger process, does the program exist in filesystem?\n");
         this.handleMsg("stderr", err.toString() + "\n");
         this.quitEvent();
     }
+
+    //#region DebugSession
 
     protected override initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
         response.body = response.body || {};
@@ -298,23 +300,6 @@ export class CppDebugSession extends DebugSession {
         }, err => {
             this.sendErrorResponse(response, 101, `Failed to attach: ${err.toString()}`);
         });
-    }
-
-    private setSourceFileMapInfo(sourceFileMap: SourceFileMapInfo) {
-        const isGDB = this.miMode === 'gdb';
-        Object.entries(sourceFileMap).forEach(([source, value]) => {
-            const mappedPath = typeof value === 'string' ? value : value.editorPath;
-            if (isGDB) {
-                this.miDebugger.extraCommands.push(
-                    `gdb-set substitute-path "${escape(source)}" "${escape(mappedPath)}"`
-                );
-            } else {
-                this.miDebugger.extraCommands.push(
-                    `settings append target.source-map ${source} ${mappedPath}`
-                );
-            }
-        });
-
     }
 
     protected override disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
@@ -428,14 +413,6 @@ export class CppDebugSession extends DebugSession {
             }
             this.sendErrorResponse(response, 17, `Could not get threads: ${error}`);
         });
-    }
-
-    // Supports 65535 threads.
-    protected threadAndLevelToFrameId(threadId: number, level: number) {
-        return level << 16 | threadId;
-    }
-    protected frameIdToThreadAndLevel(frameId: number) {
-        return [frameId & 0xffff, frameId >> 16];
     }
 
     protected override stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
@@ -922,7 +899,9 @@ export class CppDebugSession extends DebugSession {
         this.sendResponse(response);
     }
 
-    protected setSourceFileMap(configMap: { [index: string]: string }, fallbackGDB: string, fallbackIDE: string): void {
+    //#endregion
+
+    private setSourceFileMap(configMap: { [index: string]: string }, fallbackGDB: string, fallbackIDE: string): void {
         if (configMap === undefined) {
             this.sourceFileMap = new SourceFileMap({ [fallbackGDB]: fallbackIDE });
         } else {
@@ -940,6 +919,31 @@ export class CppDebugSession extends DebugSession {
         } else {
             return strings;
         }
+    }
+
+    private setSourceFileMapInfo(sourceFileMap: SourceFileMapInfo) {
+        const isGDB = this.miMode === 'gdb';
+        Object.entries(sourceFileMap).forEach(([source, value]) => {
+            const mappedPath = typeof value === 'string' ? value : value.editorPath;
+            if (isGDB) {
+                this.miDebugger.extraCommands.push(
+                    `gdb-set substitute-path "${escape(source)}" "${escape(mappedPath)}"`
+                );
+            } else {
+                this.miDebugger.extraCommands.push(
+                    `settings append target.source-map ${source} ${mappedPath}`
+                );
+            }
+        });
+
+    }
+
+    // Supports 65535 threads.
+    private threadAndLevelToFrameId(threadId: number, level: number) {
+        return level << 16 | threadId;
+    }
+    private frameIdToThreadAndLevel(frameId: number) {
+        return [frameId & 0xffff, frameId >> 16];
     }
 }
 
