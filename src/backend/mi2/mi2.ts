@@ -917,15 +917,15 @@ export class MI2 extends EventEmitter implements IBackend {
             this.log("stderr", "getRegisters");
         }
 
-        // Getting register names and values are separate GDB commands.
-        // We first retrieve the register names and then the values.
-        // The register names should never change, so we could cache and reuse them,
-        // but for now we just retrieve them every time to keep it simple.
-        const names = await this.getRegisterNames();
+        // Retrieve register names only when the cache is empty to avoid redundant calls.
+        if (this.registerNames.length === 0) {
+            this.registerNames = await this.getRegisterNames();
+        }
+
         const values = await this.getRegisterValues();
         const ret: Variable[] = [];
         for (const val of values) {
-            const key = names[val.index];
+            const key = this.registerNames[val.index];
             const value = val.value;
             const type = "string";
             ret.push({
@@ -1106,14 +1106,18 @@ export class MI2 extends EventEmitter implements IBackend {
     features: string[] = [];
     public procEnv: any;
     public registerLimit: string = "";
-    protected isSSH: boolean = false;
-    protected sshReady: boolean = false;
-    protected currentToken: number = 1;
-    protected handlers: { [index: number]: (info: MINode) => any } = {};
-    protected breakpoints: Map<Breakpoint, Number> = new Map();
-    protected buffer: string = "";
-    protected errbuf: string = "";
+
     protected process!: ChildProcess.ChildProcess;
-    protected stream!: ClientChannel;
-    protected sshConn!: Client;
+
+    private isSSH: boolean = false;
+    private sshReady: boolean = false;
+    private currentToken: number = 1;
+    private handlers: { [index: number]: (info: MINode) => any } = {};
+    private breakpoints: Map<Breakpoint, Number> = new Map();
+    private buffer: string = "";
+    private errbuf: string = "";
+    private stream!: ClientChannel;
+    private sshConn!: Client;
+    // Cache for register names retrieved from GDB to avoid redundant queries
+    private registerNames: string[] = [];
 }
