@@ -1,5 +1,5 @@
 import { DebugProtocol } from "@vscode/debugprotocol";
-import { MINode } from "./mi_parse";
+import { MINode } from "./miParse";
 
 export type ValuesFormattingMode = "disabled" | "parseText" | "prettyPrinters";
 

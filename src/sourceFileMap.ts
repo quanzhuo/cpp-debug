@@ -1,4 +1,4 @@
-import { PathKind, PathWin32, PathPosix } from "./path_kind";
+import { PathKind, PathWin32, PathPosix } from "./pathKind";
 
 interface Mapping {
     "remote": string;

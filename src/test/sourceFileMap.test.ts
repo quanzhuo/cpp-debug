@@ -1,6 +1,6 @@
 import * as assert from 'assert';
-import { PathKind, PathPosix, PathWin32 } from "../../path_kind";
-import { SourceFileMap } from '../../source_file_map';
+import { PathKind, PathPosix, PathWin32 } from "../pathKind";
+import { SourceFileMap } from '../sourceFileMap';
 
 suite("Source File Map", () => {
 	test("No Mappings", () => {

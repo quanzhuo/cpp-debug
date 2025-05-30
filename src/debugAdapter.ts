@@ -7,17 +7,11 @@ import * as net from "net";
 import * as os from "os";
 import * as systemPath from "path";
 import { Breakpoint, MIError, ValuesFormattingMode, Variable, VariableObject } from './backend/backend';
-import { expandValue } from './backend/gdb_expansion';
 import { MI2 } from './backend/mi2/mi2';
 import { MI2_LLDB } from './backend/mi2/mi2lldb';
-import { MINode } from './backend/mi_parse';
+import { MINode } from './backend/miParse';
 import { CppDbgAttachRequestArguments, CppDbgLaunchRequestArguments, SourceFileMapInfo } from './types';
-import { SourceFileMap } from "./source_file_map";
-
-class ExtendedVariable {
-    constructor(public name: string, public options: { "arg": any }) {
-    }
-}
+import { SourceFileMap } from "./sourceFileMap";
 
 class VariableScope {
     constructor(public readonly name: string, public readonly threadId: number, public readonly level: number) {
@@ -31,10 +25,9 @@ class VariableScope {
 export enum RunCommand { CONTINUE, RUN, NONE }
 
 export class CppDebugSession extends DebugSession {
-    private variableHandles = new Handles<VariableScope | string | VariableObject | ExtendedVariable>();
+    private variableHandles = new Handles<VariableScope | VariableObject>();
     private variableHandlesReverse: { [id: string]: number } = {};
     private scopeHandlesReverse: { [key: string]: number } = {};
-    private useVarObjects: boolean = true;
     private quit: boolean = false;
     private attached: boolean = false;
     private initialRunCommand: RunCommand = RunCommand.RUN;
@@ -113,17 +106,11 @@ export class CppDebugSession extends DebugSession {
     private setValuesFormattingMode(mode: ValuesFormattingMode) {
         switch (mode) {
             case "disabled":
-                this.useVarObjects = true;
                 this.miDebugger.prettyPrint = false;
                 break;
             case "prettyPrinters":
-                this.useVarObjects = true;
                 this.miDebugger.prettyPrint = true;
                 break;
-            case "parseText":
-            default:
-                this.useVarObjects = false;
-                this.miDebugger.prettyPrint = false;
         }
     }
 
@@ -315,25 +302,19 @@ export class CppDebugSession extends DebugSession {
 
     protected override async setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments): Promise<void> {
         try {
-            if (this.useVarObjects) {
-                let name = args.name;
-                const parent = this.variableHandles.get(args.variablesReference);
-                if (parent instanceof VariableScope) {
-                    name = VariableScope.variableName(args.variablesReference, name);
-                } else if (parent instanceof VariableObject) {
-                    name = `${parent.name}.${name}`;
-                }
-
-                const res = await this.miDebugger.varAssign(name, args.value);
-                response.body = {
-                    value: res.result("value")
-                };
-            } else {
-                await this.miDebugger.changeVariable(args.name, args.value);
-                response.body = {
-                    value: args.value
-                };
+            let name = args.name;
+            const parent = this.variableHandles.get(args.variablesReference);
+            if (parent instanceof VariableScope) {
+                name = VariableScope.variableName(args.variablesReference, name);
+            } else if (parent instanceof VariableObject) {
+                name = `${parent.name}.${name}`;
             }
+
+            const res = await this.miDebugger.varAssign(name, args.value);
+            response.body = {
+                value: res.result("value")
+            };
+
             this.sendResponse(response);
         } catch (err) {
             this.sendErrorResponse(response, 11, `Could not continue: ${err}`);
@@ -555,22 +536,14 @@ export class CppDebugSession extends DebugSession {
 
     protected override async variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
         const variables: DebugProtocol.Variable[] = [];
-        const id: VariableScope | string | VariableObject | ExtendedVariable = this.variableHandles.get(args.variablesReference);
-
-        const createVariable = (arg: string | VariableObject, options?: any) => {
-            if (options) {
-                return this.variableHandles.create(new ExtendedVariable(typeof arg === 'string' ? arg : arg.name, options));
-            } else {
-                return this.variableHandles.create(arg);
-            }
-        };
+        const id: VariableScope | VariableObject = this.variableHandles.get(args.variablesReference);
 
         const findOrCreateVariable = (varObj: VariableObject): number => {
             let id: number;
             if (this.variableHandlesReverse.hasOwnProperty(varObj.name)) {
                 id = this.variableHandlesReverse[varObj.name];
             } else {
-                id = createVariable(varObj);
+                id = this.variableHandles.create(varObj);
                 this.variableHandlesReverse[varObj.name] = id;
             }
             return varObj.isCompound() ? id : 0;
@@ -590,62 +563,37 @@ export class CppDebugSession extends DebugSession {
                 } else {
                     const stack: Variable[] = await this.miDebugger.getStackVariables(id.threadId, id.level);
                     for (const variable of stack) {
-                        if (this.useVarObjects) {
+                        try {
+                            const varObjName = VariableScope.variableName(args.variablesReference, variable.name);
+                            let varObj: VariableObject;
                             try {
-                                const varObjName = VariableScope.variableName(args.variablesReference, variable.name);
-                                let varObj: VariableObject;
-                                try {
-                                    const changes = await this.miDebugger.varUpdate(varObjName);
-                                    const changelist = changes.result("changelist");
-                                    changelist.forEach((change: any) => {
-                                        const name = MINode.valueOf(change, "name");
-                                        const vId = this.variableHandlesReverse[name];
-                                        const v = this.variableHandles.get(vId) as any;
-                                        v.applyChanges(change);
-                                    });
-                                    const varId = this.variableHandlesReverse[varObjName];
-                                    varObj = this.variableHandles.get(varId) as any;
-                                } catch (err) {
-                                    if (err instanceof MIError && (err.message === "Variable object not found" || err.message.endsWith("does not exist"))) {
-                                        varObj = await this.miDebugger.varCreate(id.threadId, id.level, variable.name, varObjName);
-                                        const varId = findOrCreateVariable(varObj);
-                                        varObj.exp = variable.name;
-                                        varObj.id = varId;
-                                    } else {
-                                        throw err;
-                                    }
-                                }
-                                variables.push(varObj.toProtocolVariable());
+                                const changes = await this.miDebugger.varUpdate(varObjName);
+                                const changelist = changes.result("changelist");
+                                changelist.forEach((change: any) => {
+                                    const name = MINode.valueOf(change, "name");
+                                    const vId = this.variableHandlesReverse[name];
+                                    const v = this.variableHandles.get(vId) as any;
+                                    v.applyChanges(change);
+                                });
+                                const varId = this.variableHandlesReverse[varObjName];
+                                varObj = this.variableHandles.get(varId) as any;
                             } catch (err) {
-                                variables.push({
-                                    name: variable.name,
-                                    value: `<${err}>`,
-                                    variablesReference: 0
-                                });
-                            }
-                        } else {
-                            if (variable.valueStr !== undefined) {
-                                let expanded = expandValue(createVariable, `{${variable.name}=${variable.valueStr})`, "", variable.raw);
-                                if (expanded) {
-                                    if (typeof expanded[0] === "string") {
-                                        expanded = [
-                                            {
-                                                name: "<value>",
-                                                value: this.prettyStringArray(expanded),
-                                                variablesReference: 0
-                                            }
-                                        ];
-                                    }
-                                    variables.push(expanded[0]);
+                                if (err instanceof MIError && (err.message === "Variable object not found" || err.message.endsWith("does not exist"))) {
+                                    varObj = await this.miDebugger.varCreate(id.threadId, id.level, variable.name, varObjName);
+                                    const varId = findOrCreateVariable(varObj);
+                                    varObj.exp = variable.name;
+                                    varObj.id = varId;
+                                } else {
+                                    throw err;
                                 }
-                            } else {
-                                variables.push({
-                                    name: variable.name,
-                                    type: variable.type,
-                                    value: variable.type,
-                                    variablesReference: createVariable(variable.name)
-                                });
                             }
+                            variables.push(varObj.toProtocolVariable());
+                        } catch (err) {
+                            variables.push({
+                                name: variable.name,
+                                value: `<${err}>`,
+                                variablesReference: 0
+                            });
                         }
                     }
                 }
@@ -656,126 +604,23 @@ export class CppDebugSession extends DebugSession {
             } catch (err) {
                 this.sendErrorResponse(response, 1, `Could not expand variable: ${err}`);
             }
-        } else if (typeof id === "string") {
+        } else if (id instanceof VariableObject) {
             // Variable members
-            let variable;
+            let children: VariableObject[];
             try {
-                // TODO: this evaluates on an (effectively) unknown thread for multithreaded programs.
-                variable = await this.miDebugger.evalExpression(JSON.stringify(id), 0, 0);
-                try {
-                    let variableValue = variable.result("value");
-                    const pattern = /'([^']*)' <repeats (\d+) times>/g;
-                    variableValue = variableValue.replace(pattern, (_: any, char: string, count: string) => {
-                        const repeatCount = parseInt(count, 10) + 1;
-                        const repeatedArray = Array(repeatCount).fill(char);
-                        return `{${repeatedArray.map(item => `'${item}'`).join(', ')}}`;
-                    });
-                    let expanded = expandValue(createVariable, variableValue, id, variable);
-                    if (!expanded) {
-                        this.sendErrorResponse(response, 2, `Could not expand variable`);
-                    } else {
-                        if (typeof expanded[0] === "string") {
-                            expanded = [
-                                {
-                                    name: "<value>",
-                                    value: this.prettyStringArray(expanded),
-                                    variablesReference: 0
-                                }
-                            ];
-                        }
-                        response.body = {
-                            variables: expanded
-                        };
-                        this.sendResponse(response);
-                    }
-                } catch (e) {
-                    this.sendErrorResponse(response, 2, `Could not expand variable: ${e}`);
-                }
-            } catch (err) {
-                this.sendErrorResponse(response, 1, `Could not expand variable: ${err}`);
-            }
-        } else if (typeof id === "object") {
-            if (id instanceof VariableObject) {
-                // Variable members
-                let children: VariableObject[];
-                try {
-                    children = await this.miDebugger.varListChildren(id.name);
-                    const vars = children.map(child => {
-                        const varId = findOrCreateVariable(child);
-                        child.id = varId;
-                        return child.toProtocolVariable();
-                    });
+                children = await this.miDebugger.varListChildren(id.name);
+                const vars = children.map(child => {
+                    const varId = findOrCreateVariable(child);
+                    child.id = varId;
+                    return child.toProtocolVariable();
+                });
 
-                    response.body = {
-                        variables: vars
-                    };
-                    this.sendResponse(response);
-                } catch (err) {
-                    this.sendErrorResponse(response, 1, `Could not expand variable: ${err}`);
-                }
-            } else if (id instanceof ExtendedVariable) {
-                const varReq = id;
-                if (varReq.options.arg) {
-                    const strArr: DebugProtocol.Variable[] = [];
-                    let argsPart = true;
-                    let arrIndex = 0;
-                    const submit = () => {
-                        response.body = {
-                            variables: strArr
-                        };
-                        this.sendResponse(response);
-                    };
-                    const addOne = async () => {
-                        // TODO: this evaluates on an (effectively) unknown thread for multithreaded programs.
-                        const variable = await this.miDebugger.evalExpression(JSON.stringify(`${varReq.name}+${arrIndex})`), 0, 0);
-                        try {
-                            const expanded = expandValue(createVariable, variable.result("value"), varReq.name, variable);
-                            if (!expanded) {
-                                this.sendErrorResponse(response, 15, `Could not expand variable`);
-                            } else {
-                                if (typeof expanded === "string") {
-                                    if (expanded === "<nullptr>") {
-                                        if (argsPart) {
-                                            argsPart = false;
-                                        } else {
-                                            return submit();
-                                        }
-                                    } else if (expanded[0] !== '"') {
-                                        strArr.push({
-                                            name: "[err]",
-                                            value: expanded,
-                                            variablesReference: 0
-                                        });
-                                        return submit();
-                                    }
-                                    strArr.push({
-                                        name: `[${(arrIndex++)}]`,
-                                        value: expanded,
-                                        variablesReference: 0
-                                    });
-                                    addOne();
-                                } else {
-                                    strArr.push({
-                                        name: "[err]",
-                                        value: expanded,
-                                        variablesReference: 0
-                                    });
-                                    submit();
-                                }
-                            }
-                        } catch (e) {
-                            this.sendErrorResponse(response, 14, `Could not expand variable: ${e}`);
-                        }
-                    };
-                    addOne();
-                } else {
-                    this.sendErrorResponse(response, 13, `Unimplemented variable request options: ${JSON.stringify(varReq.options)}`);
-                }
-            } else {
                 response.body = {
-                    variables: id
+                    variables: vars
                 };
                 this.sendResponse(response);
+            } catch (err) {
+                this.sendErrorResponse(response, 1, `Could not expand variable: ${err}`);
             }
         } else {
             response.body = {

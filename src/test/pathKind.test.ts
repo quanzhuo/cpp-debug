@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { PathKind, PathPosix, PathWin32 } from "../../path_kind";
+import { PathKind, PathPosix, PathWin32 } from "../pathKind";
 
 suite("Path Kind", () => {
 	const pathWin32: PathKind = PathWin32.getInstance();

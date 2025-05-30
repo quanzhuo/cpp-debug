@@ -6,7 +6,7 @@ import * as path from "path";
 import { Client, ClientChannel, ExecOptions } from "ssh2";
 import { Breakpoint, IBackend, MIError, RegisterValue, SSHArguments, Stack, Thread, Variable, VariableObject } from "../backend";
 import * as linuxTerm from '../linux/console';
-import { MINode, parseMI } from '../mi_parse';
+import { MINode, parseMI } from '../miParse';
 
 export function escape(str: string) {
     return str.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
