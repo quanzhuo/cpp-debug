@@ -84,6 +84,13 @@ export class ThreadInfo implements DebugProtocol.Thread {
     }
 }
 
+export interface MIReadMemoryResult {
+    begin: bigint;
+    offset: bigint;
+    end: bigint;
+    contents: string;
+}
+
 export interface Stack {
     level: number;
     address: string;

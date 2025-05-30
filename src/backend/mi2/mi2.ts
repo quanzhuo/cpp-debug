@@ -5,7 +5,7 @@ import * as net from "net";
 import * as path from "path";
 import { Client, ClientChannel, ExecOptions } from "ssh2";
 import { logger, LoggingCategory } from "../../logger";
-import { Breakpoint, IBackend, MIError, RegisterValue, SSHArguments, Stack, ThreadInfo, Variable, VariableObject } from "../backend";
+import { Breakpoint, IBackend, MIError, MIReadMemoryResult, RegisterValue, SSHArguments, Stack, ThreadInfo, Variable, VariableObject } from "../backend";
 import * as linuxTerm from '../linux/console';
 import { MINode, parseMI } from '../miParse';
 
@@ -890,6 +890,19 @@ export class MI2 extends EventEmitter implements IBackend {
         return new Promise((resolve, reject) => {
             this.sendCommand("data-read-memory-bytes 0x" + from.toString(16) + " " + length).then((result) => {
                 resolve(result.result("memory[0].contents"));
+            }, reject);
+        });
+    }
+
+    readProcessMemory(address: bigint, count: number): Promise<MIReadMemoryResult> {
+        return new Promise((resolve, reject) => {
+            this.sendCommand(`data-read-memory-bytes 0x${address.toString(16)} ${count}`, true).then((result) => {
+                resolve({
+                    begin: BigInt(result.result("memory[0].begin")),
+                    offset: BigInt(result.result("memory[0].offset")),
+                    end: BigInt(result.result("memory[0].end")),
+                    contents: result.result("memory[0].contents"),
+                });
             }, reject);
         });
     }

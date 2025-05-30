@@ -6,7 +6,7 @@ import * as fs from "fs";
 import * as net from "net";
 import * as os from "os";
 import * as systemPath from "path";
-import { Breakpoint, MIError, ValuesFormattingMode, Variable, VariableObject } from './backend/backend';
+import { Breakpoint, MIError, MIReadMemoryResult, ValuesFormattingMode, Variable, VariableObject } from './backend/backend';
 import { MI2 } from './backend/mi2/mi2';
 import { MI2_LLDB } from './backend/mi2/mi2lldb';
 import { MINode } from './backend/miParse';
@@ -194,6 +194,7 @@ export class CppDebugSession extends DebugSession {
         response.body.supportsSetVariable = true;
         response.body.supportsStepBack = true;
         response.body.supportsLogPoints = true;
+        response.body.supportsReadMemoryRequest = true;
         this.sendResponse(response);
     }
 
@@ -786,6 +787,72 @@ export class CppDebugSession extends DebugSession {
     protected dispatchRequest(request: DebugProtocol.Request): void {
         logger.writeLine(LoggingCategory.AdapterTrace, `From client: ${request.command}(${JSON.stringify(request.arguments)})`);
         super.dispatchRequest(request);
+    }
+
+    protected readMemoryRequest(response: DebugProtocol.ReadMemoryResponse, args: DebugProtocol.ReadMemoryArguments, request?: DebugProtocol.Request): void {
+        if (args.memoryReference.length === 0) {
+            this.sendErrorResponse(response, 19, "Memory reference is empty");
+            return;
+        }
+
+        let address = BigInt(args.memoryReference);
+        if (args.offset) {
+            address += BigInt(args.offset);
+        }
+
+        this.miDebugger.readProcessMemory(address, args.count).then((data: MIReadMemoryResult) => {
+            // ensure the buffer contains the desired bytes.
+            if (data.begin + data.offset !== address) {
+                this.sendErrorResponse(response, 20, `Memory read error: expected address ${address}, got ${data.begin + data.offset}`);
+                return;
+            }
+
+            let bytesRead = data.contents.length / 2;
+            if (bytesRead > args.count) {
+                bytesRead = args.count;
+            }
+
+            const bytes = new Uint8Array(args.count);
+            for (let i = 0; i < bytesRead; i++) {
+                bytes[i] = parseInt(data.contents.substring(i * 2, (i + 1) * 2), 16);
+            }
+
+            // vscode requested to read a block of memory (args.count bytes), but actually read fewer 
+            // bytes than requested, for example due to hitting an invalid memory page or crossing a page boundary.
+            // Need to inform the frontend how many bytes at the end are unreadable (unreadableBytes)
+            let unreadableBytes = 0n;
+            if (bytesRead < args.count) {
+                // Assume the memory page size is 4096 bytes (actual ARM may have 64K pages, but we use 4K here)
+                const pageSize = 4096n;
+                // Calculate the end address of this read: readEnd = addr.Address + bytesRead
+                const readEnd = address + BigInt(bytesRead);
+                let nextPageStart = (readEnd + pageSize - 1n) / pageSize * pageSize;
+                if (nextPageStart === readEnd) {
+                    nextPageStart = readEnd + pageSize;
+                }
+
+                // if we have crossed a page boundry - Unreadable = bytes till end of page
+                const maxUnreadable = BigInt(args.count - bytesRead);
+                const minBigInt = (...args: bigint[]): bigint => {
+                    return args.reduce((a, b) => a < b ? a : b);
+                }
+                if (address + BigInt(args.count) > nextPageStart) {
+                    unreadableBytes = minBigInt(maxUnreadable, nextPageStart - readEnd);
+                } else {
+                    unreadableBytes = minBigInt(maxUnreadable, pageSize);
+                }
+            }
+
+            response.body = response.body || { address: '' };
+            response.body.address = address.toString();
+            response.body.data = Buffer.from(bytes.subarray(0, bytesRead)).toString('base64');
+            response.body.unreadableBytes = Number(unreadableBytes);
+
+            this.sendResponse(response);
+
+        }).catch((err: MIError) => {
+            this.sendErrorResponse(response, 21, `Could not read memory: ${err.message}`);
+        });
     }
 
     //#endregion
