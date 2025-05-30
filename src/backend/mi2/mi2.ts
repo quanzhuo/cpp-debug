@@ -4,10 +4,10 @@ import * as fs from "fs";
 import * as net from "net";
 import * as path from "path";
 import { Client, ClientChannel, ExecOptions } from "ssh2";
-import { Breakpoint, IBackend, MIError, RegisterValue, SSHArguments, Stack, Thread, Variable, VariableObject } from "../backend";
+import { logger, LoggingCategory } from "../../logger";
+import { Breakpoint, IBackend, MIError, RegisterValue, SSHArguments, Stack, ThreadInfo, Variable, VariableObject } from "../backend";
 import * as linuxTerm from '../linux/console';
 import { MINode, parseMI } from '../miParse';
-import { logger, LoggingCategory } from "../../logger";
 
 export function escape(str: string) {
     return str.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
@@ -761,23 +761,11 @@ export class MI2 extends EventEmitter implements IBackend {
         });
     }
 
-    async getThreads(): Promise<Thread[]> {
+    async getThreads(): Promise<ThreadInfo[]> {
         const command = "thread-info";
         const result = await this.sendCommand(command);
         const threads = result.result("threads");
-        const ret: Thread[] = [];
-        if (!Array.isArray(threads)) { // workaround for lldb-mi bug: `'^done,threads="[]"'`
-            return ret;
-        }
-        return threads.map(element => {
-            const ret: Thread = {
-                id: parseInt(MINode.valueOf(element, "id")),
-                targetId: MINode.valueOf(element, "target-id"),
-                name: MINode.valueOf(element, "name") || MINode.valueOf(element, "details")
-            };
-
-            return ret;
-        });
+        return threads.map((thread: any) => new ThreadInfo(thread));
     }
 
     async getStack(startFrame: number, maxLevels: number, thread: number): Promise<Stack[]> {

@@ -13,10 +13,75 @@ export interface Breakpoint {
     logMessage?: string;
 }
 
-export interface Thread {
+export class ThreadInfo implements DebugProtocol.Thread {
     id: number;
     targetId: string;
-    name?: string;
+    name: string;
+
+    constructor(thread: any) {
+        this.id = parseInt(MINode.valueOf(thread, "id"));
+        this.targetId = MINode.valueOf(thread, 'target-id');
+        this.name = MINode.valueOf(thread, 'name') || undefined;
+        const tid = this.getTidFromTargetId(this.targetId);
+        if (this.name && tid !== 0) {
+            this.name = `${this.name} [${tid}]`;
+        }
+    }
+
+    private getTidFromTargetId(targetId: string): number {
+        let tid = 0;
+
+        // 1. <number>
+        tid = parseInt(targetId, 10);
+        if (!isNaN(tid) && tid !== 0) {
+            return tid;
+        }
+
+        // 2. "Thread <number>"
+        if (targetId.toLowerCase().startsWith("thread ")) {
+            const rest = targetId.substring("Thread ".length);
+            tid = parseInt(rest, 10);
+            if (!isNaN(tid) && tid !== 0) {
+                return tid;
+            }
+        }
+
+        // 3. "Process <number>"
+        if (targetId.toLowerCase().startsWith("process ")) {
+            const rest = targetId.substring("Process ".length);
+            tid = parseInt(rest, 10);
+            if (!isNaN(tid) && tid !== 0) {
+                return tid;
+            }
+        }
+
+        // 4. "Thread <...> (LWP <number>)"
+        if (targetId.toLowerCase().startsWith("thread ")) {
+            const lwpPos = targetId.indexOf("(LWP ");
+            const parenPos = targetId.lastIndexOf(')');
+            if (lwpPos !== -1 && parenPos !== -1) {
+                const lwpStart = lwpPos + 5;
+                const len = parenPos - lwpStart;
+                if (len > 0) {
+                    const lwpStr = targetId.substr(lwpStart, len);
+                    tid = parseInt(lwpStr, 10);
+                    if (!isNaN(tid) && tid !== 0) {
+                        return tid;
+                    }
+                }
+            }
+        }
+
+        // 5. "LWP <number>"
+        if (targetId.toLowerCase().startsWith("lwp ")) {
+            const rest = targetId.substring("LWP ".length);
+            tid = parseInt(rest, 10);
+            if (!isNaN(tid) && tid !== 0) {
+                return tid;
+            }
+        }
+        return tid;
+    }
 }
 
 export interface Stack {
@@ -73,7 +138,7 @@ export interface IBackend {
     addBreakPoint(breakpoint: Breakpoint): Thenable<[boolean, Breakpoint | undefined]>;
     removeBreakPoint(breakpoint: Breakpoint): Thenable<boolean>;
     clearBreakPoints(source?: string): Thenable<any>;
-    getThreads(): Thenable<Thread[]>;
+    getThreads(): Thenable<ThreadInfo[]>;
     getStack(startFrame: number, maxLevels: number, thread: number): Thenable<Stack[]>;
     getStackVariables(thread: number, frame: number): Thenable<Variable[]>;
     evalExpression(name: string, thread: number, frame: number): Thenable<any>;
