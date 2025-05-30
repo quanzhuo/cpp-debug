@@ -54,7 +54,8 @@
 			"configurations": [
 				"Run Extension",
 				"Run Debug Adapter"
-			]
+			],
+			"preLaunchTask": "npm: compile"
 		},
 	]
 }
