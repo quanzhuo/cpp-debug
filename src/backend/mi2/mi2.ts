@@ -7,6 +7,7 @@ import { Client, ClientChannel, ExecOptions } from "ssh2";
 import { Breakpoint, IBackend, MIError, RegisterValue, SSHArguments, Stack, Thread, Variable, VariableObject } from "../backend";
 import * as linuxTerm from '../linux/console';
 import { MINode, parseMI } from '../miParse';
+import { logger, LoggingCategory } from "../../logger";
 
 export function escape(str: string) {
     return str.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
@@ -409,122 +410,122 @@ export class MI2 extends EventEmitter implements IBackend {
                 if (!gdbMatch.exec(line)) {
                     this.log("stdout", line);
                 }
-            } else {
-                const parsed = parseMI(line);
-                if (this.debugOutput) {
-                    this.log("log", "GDB -> App: " + JSON.stringify(parsed));
-                }
-                let handled = false;
-                if (parsed.token !== undefined) {
-                    if (this.handlers[parsed.token]) {
-                        this.handlers[parsed.token](parsed);
-                        delete this.handlers[parsed.token];
-                        handled = true;
-                    }
-                }
-                if (!handled && parsed.resultRecords && parsed.resultRecords.resultClass === "error") {
-                    this.log("stderr", parsed.result("msg") || line);
-                }
-                if (parsed.outOfBandRecord) {
-                    parsed.outOfBandRecord.forEach(record => {
-                        if (record.isStream) {
-                            this.log(record.type, record.content);
-                            const logOutput = this.logMessage.logMsgOutput(record);
-                            if (logOutput) {
-                                this.log("console", logOutput);
-                            }
-                        } else {
-                            if (record.type === "exec") {
-                                this.emit("exec-async-output", parsed);
-                                if (record.asyncClass === "running") {
-                                    this.emit("running", parsed);
-                                }
-                                else if (record.asyncClass === "stopped") {
-                                    const reason = parsed.record("reason");
-                                    if (reason === undefined) {
-                                        if (trace) {
-                                            this.log("stderr", "stop (no reason given)");
-                                        }
-                                        // attaching to a process stops, but does not provide a reason
-                                        // also python generated interrupt seems to only produce this
-                                        this.emit("step-other", parsed);
-                                    } else {
-                                        if (trace) {
-                                            this.log("stderr", "stop: " + reason);
-                                        }
-                                        switch (reason) {
-                                            case "breakpoint-hit":
-                                                this.emit("breakpoint", parsed);
-                                                this.logMessage.logMsgProcess(parsed);
-                                                break;
-                                            case "watchpoint-trigger":
-                                            case "read-watchpoint-trigger":
-                                            case "access-watchpoint-trigger":
-                                                this.emit("watchpoint", parsed);
-                                                break;
-                                            case "function-finished":
-                                            // identical result → send step-end
-                                            // this.emit("step-out-end", parsed);
-                                            // break;
-                                            case "location-reached":
-                                            case "end-stepping-range":
-                                                this.emit("step-end", parsed);
-                                                break;
-                                            case "watchpoint-scope":
-                                            case "solib-event":
-                                            case "syscall-entry":
-                                            case "syscall-return":
-                                                // TODO: inform the user
-                                                this.emit("step-end", parsed);
-                                                break;
-                                            case "fork":
-                                            case "vfork":
-                                            case "exec":
-                                                // TODO: inform the user, possibly add second inferior
-                                                this.emit("step-end", parsed);
-                                                break;
-                                            case "signal-received":
-                                                this.emit("signal-stop", parsed);
-                                                break;
-                                            case "exited-normally":
-                                                this.emit("exited-normally", parsed);
-                                                break;
-                                            case "exited": // exit with error code != 0
-                                                this.log("stderr", "Program exited with code " + parsed.record("exit-code"));
-                                                this.emit("exited-normally", parsed);
-                                                break;
-                                            // case "exited-signalled":	// consider handling that explicit possible
-                                            // 	this.log("stderr", "Program exited because of signal " + parsed.record("signal"));
-                                            // 	this.emit("stopped", parsed);
-                                            // 	break;
+                return;
+            }
 
-                                            default:
-                                                this.log("console", "Not implemented stop reason (assuming exception): " + reason);
-                                                this.emit("stopped", parsed);
-                                                break;
-                                        }
+            logger.writeLine(LoggingCategory.EngineLogging, line);
+
+            const parsed = parseMI(line);
+            let handled = false;
+            if (parsed.token !== undefined) {
+                if (this.handlers[parsed.token]) {
+                    this.handlers[parsed.token](parsed);
+                    delete this.handlers[parsed.token];
+                    handled = true;
+                }
+            }
+            if (!handled && parsed.resultRecords && parsed.resultRecords.resultClass === "error") {
+                this.log("stderr", parsed.result("msg") || line);
+            }
+            if (parsed.outOfBandRecord) {
+                parsed.outOfBandRecord.forEach(record => {
+                    if (record.isStream) {
+                        this.log(record.type, record.content);
+                        const logOutput = this.logMessage.logMsgOutput(record);
+                        if (logOutput) {
+                            this.log("console", logOutput);
+                        }
+                    } else {
+                        if (record.type === "exec") {
+                            this.emit("exec-async-output", parsed);
+                            if (record.asyncClass === "running") {
+                                this.emit("running", parsed);
+                            }
+                            else if (record.asyncClass === "stopped") {
+                                const reason = parsed.record("reason");
+                                if (reason === undefined) {
+                                    if (trace) {
+                                        this.log("stderr", "stop (no reason given)");
                                     }
+                                    // attaching to a process stops, but does not provide a reason
+                                    // also python generated interrupt seems to only produce this
+                                    this.emit("step-other", parsed);
                                 } else {
-                                    this.log("log", JSON.stringify(parsed));
+                                    if (trace) {
+                                        this.log("stderr", "stop: " + reason);
+                                    }
+                                    switch (reason) {
+                                        case "breakpoint-hit":
+                                            this.emit("breakpoint", parsed);
+                                            this.logMessage.logMsgProcess(parsed);
+                                            break;
+                                        case "watchpoint-trigger":
+                                        case "read-watchpoint-trigger":
+                                        case "access-watchpoint-trigger":
+                                            this.emit("watchpoint", parsed);
+                                            break;
+                                        case "function-finished":
+                                        // identical result → send step-end
+                                        // this.emit("step-out-end", parsed);
+                                        // break;
+                                        case "location-reached":
+                                        case "end-stepping-range":
+                                            this.emit("step-end", parsed);
+                                            break;
+                                        case "watchpoint-scope":
+                                        case "solib-event":
+                                        case "syscall-entry":
+                                        case "syscall-return":
+                                            // TODO: inform the user
+                                            this.emit("step-end", parsed);
+                                            break;
+                                        case "fork":
+                                        case "vfork":
+                                        case "exec":
+                                            // TODO: inform the user, possibly add second inferior
+                                            this.emit("step-end", parsed);
+                                            break;
+                                        case "signal-received":
+                                            this.emit("signal-stop", parsed);
+                                            break;
+                                        case "exited-normally":
+                                            this.emit("exited-normally", parsed);
+                                            break;
+                                        case "exited": // exit with error code != 0
+                                            this.log("stderr", "Program exited with code " + parsed.record("exit-code"));
+                                            this.emit("exited-normally", parsed);
+                                            break;
+                                        // case "exited-signalled":	// consider handling that explicit possible
+                                        // 	this.log("stderr", "Program exited because of signal " + parsed.record("signal"));
+                                        // 	this.emit("stopped", parsed);
+                                        // 	break;
+
+                                        default:
+                                            this.log("console", "Not implemented stop reason (assuming exception): " + reason);
+                                            this.emit("stopped", parsed);
+                                            break;
+                                    }
                                 }
-                            } else if (record.type === "notify") {
-                                if (record.asyncClass === "thread-created") {
-                                    this.emit("thread-created", parsed);
-                                } else if (record.asyncClass === "thread-exited") {
-                                    this.emit("thread-exited", parsed);
-                                }
+                            } else {
+                                this.log("log", JSON.stringify(parsed));
+                            }
+                        } else if (record.type === "notify") {
+                            if (record.asyncClass === "thread-created") {
+                                this.emit("thread-created", parsed);
+                            } else if (record.asyncClass === "thread-exited") {
+                                this.emit("thread-exited", parsed);
                             }
                         }
-                    });
-                    handled = true;
-                }
-                // eslint-disable-next-line eqeqeq
-                if (parsed.token == undefined && parsed.resultRecords == undefined && parsed.outOfBandRecord.length === 0) {
-                    handled = true;
-                }
-                if (!handled) {
-                    this.log("log", "Unhandled: " + JSON.stringify(parsed));
-                }
+                    }
+                });
+                handled = true;
+            }
+            // eslint-disable-next-line eqeqeq
+            if (parsed.token == undefined && parsed.resultRecords == undefined && parsed.outOfBandRecord.length === 0) {
+                handled = true;
+            }
+            if (!handled) {
+                this.log("log", "Unhandled: " + JSON.stringify(parsed));
             }
         });
     }
@@ -1052,9 +1053,8 @@ export class MI2 extends EventEmitter implements IBackend {
     }
 
     sendRaw(raw: string) {
-        if (this.printCalls) {
-            this.log("log", raw);
-        }
+        logger.writeLine(LoggingCategory.EngineLogging, "DA -> Debugger: " + raw);
+
         if (this.isSSH) {
             this.stream.write(raw + "\n");
         } else {
@@ -1101,8 +1101,7 @@ export class MI2 extends EventEmitter implements IBackend {
 
     prettyPrint: boolean = true;
     frameFilters: boolean = true;
-    printCalls: boolean = false;
-    debugOutput: boolean = false;
+
     features: string[] = [];
     public procEnv: any;
     public registerLimit: string = "";

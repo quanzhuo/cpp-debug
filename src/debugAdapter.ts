@@ -10,8 +10,10 @@ import { Breakpoint, MIError, ValuesFormattingMode, Variable, VariableObject } f
 import { MI2 } from './backend/mi2/mi2';
 import { MI2_LLDB } from './backend/mi2/mi2lldb';
 import { MINode } from './backend/miParse';
-import { CppDbgAttachRequestArguments, CppDbgLaunchRequestArguments, SourceFileMapInfo } from './types';
+import { CppDbgAttachRequestArguments, CppDbgLaunchRequestArguments, LoggingSetup, SourceFileMapInfo } from './types';
 import { SourceFileMap } from "./sourceFileMap";
+import { logger, LoggingCategory } from './logger';
+import { LogLevel } from '@vscode/debugadapter/lib/logger';
 
 class VariableScope {
     constructor(public readonly name: string, public readonly threadId: number, public readonly level: number) {
@@ -40,6 +42,7 @@ export class CppDebugSession extends DebugSession {
     private commandServer?: net.Server;
     private serverPath!: string;
     private miMode: 'gdb' | 'lldb' = 'gdb';
+    private obsolete_logFilePath?: string;
 
     public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
         super(debuggerLinesStartAt1, isServer);
@@ -195,6 +198,7 @@ export class CppDebugSession extends DebugSession {
     }
 
     protected override launchRequest(response: DebugProtocol.LaunchResponse, args: CppDbgLaunchRequestArguments): void {
+        logger.loggingConfigure(args.logging);
         this.miMode = args.MIMode ?? 'gdb';
         let miDebuggerPath = args.miDebuggerPath;
         if (!miDebuggerPath) {
@@ -217,7 +221,7 @@ export class CppDebugSession extends DebugSession {
         // FIXME: split
         const debuggerArgs: string[] = args.miDebuggerArgs ? args.miDebuggerArgs.split(' ') : [];
         if (this.miMode === 'gdb') {
-            this.miDebugger = new MI2(miDebuggerPath, ["-q", "--interpreter=mi2"], debuggerArgs, env);
+            this.miDebugger = new MI2(miDebuggerPath, ["--interpreter=mi2"], debuggerArgs, env);
         } else {
             this.miDebugger = new MI2_LLDB(miDebuggerPath, [], debuggerArgs, env);
         }
@@ -235,8 +239,6 @@ export class CppDebugSession extends DebugSession {
         this.crashed = false;
         this.setValuesFormattingMode('prettyPrinters');
         this.miDebugger.frameFilters = true;
-        this.miDebugger.printCalls = args.logging ? true : false;
-        this.miDebugger.debugOutput = args.logging ? true : false;
         this.stopAtEntry = args.stopAtEntry ?? false;
         this.miDebugger.registerLimit = "";
 
@@ -251,6 +253,7 @@ export class CppDebugSession extends DebugSession {
     }
 
     protected override attachRequest(response: DebugProtocol.AttachResponse, args: CppDbgAttachRequestArguments): void {
+        logger.loggingConfigure(args.logging);
         const miMode = args.MIMode ?? 'gdb';
         let miDebuggerPath = args.miDebuggerPath;
         if (!miDebuggerPath) {
@@ -262,7 +265,7 @@ export class CppDebugSession extends DebugSession {
 
         // for attach, cpp debug doesn't support pass environment
         if (miMode === 'gdb') {
-            this.miDebugger = new MI2(miDebuggerPath, ["-q", "--interpreter=mi2"], debuggerArgs, {});
+            this.miDebugger = new MI2(miDebuggerPath, ["--interpreter=mi2"], debuggerArgs, {});
         } else {
             this.miDebugger = new MI2_LLDB(miDebuggerPath, [], debuggerArgs, {});
         }
@@ -277,8 +280,6 @@ export class CppDebugSession extends DebugSession {
         this.isSSH = false;
         this.setValuesFormattingMode('prettyPrinters');
         this.miDebugger.frameFilters = true;
-        this.miDebugger.printCalls = args.logging ? true : false;
-        this.miDebugger.debugOutput = args.logging ? true : false;
         // FIXME: 针对 attach 类型，不应该有 stopAtEntry 设置项
         this.stopAtEntry = false;
         this.miDebugger.registerLimit = "";
@@ -742,6 +743,49 @@ export class CppDebugSession extends DebugSession {
 
     protected override gotoRequest(response: DebugProtocol.GotoResponse, args: DebugProtocol.GotoArguments): void {
         this.sendResponse(response);
+    }
+
+    //#endregion
+
+    //#region logging
+
+    public start(inStream: NodeJS.ReadableStream, outStream: NodeJS.WritableStream): void {
+        super.start(inStream, outStream);
+        logger.init(e => this.sendEvent(e), this.obsolete_logFilePath, this._isServer);
+        logger.setup(LogLevel.Verbose, false, true);
+    }
+
+    public sendEvent(event: DebugProtocol.Event): void {
+        if (!(event instanceof DebugAdapter.Logger.LogOutputEvent)) {
+            // Don't create an infinite loop...
+
+            let objectToLog = event;
+            if (event instanceof OutputEvent && event.body && event.body.data && event.body.data.doNotLogOutput) {
+                delete event.body.data.doNotLogOutput;
+                objectToLog = { ...event };
+                objectToLog.body = { ...event.body, output: '<output not logged>' };
+            }
+
+            // _logger.verbose(`To client: ${JSON.stringify(objectToLog)}`);
+            logger.writeLine(LoggingCategory.StdErr, `To client: ${JSON.stringify(objectToLog)}`);
+        }
+
+        super.sendEvent(event);
+    }
+
+    public sendRequest(command: string, args: any, timeout: number, cb: (response: DebugProtocol.Response) => void): void {
+        logger.writeLine(LoggingCategory.AdapterTrace, `To client: ${JSON.stringify(command)}(${JSON.stringify(args)}), timeout: ${timeout}`);
+        super.sendRequest(command, args, timeout, cb);
+    }
+
+    public sendResponse(response: DebugProtocol.Response): void {
+        logger.writeLine(LoggingCategory.AdapterResponse, `To client: ${JSON.stringify(response)}`);
+        super.sendResponse(response);
+    }
+
+    protected dispatchRequest(request: DebugProtocol.Request): void {
+        logger.writeLine(LoggingCategory.AdapterTrace, `From client: ${request.command}(${JSON.stringify(request.arguments)})`);
+        super.dispatchRequest(request);
     }
 
     //#endregion
