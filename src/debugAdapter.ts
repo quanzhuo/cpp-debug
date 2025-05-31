@@ -835,7 +835,7 @@ export class CppDebugSession extends DebugSession {
                 const maxUnreadable = BigInt(args.count - bytesRead);
                 const minBigInt = (...args: bigint[]): bigint => {
                     return args.reduce((a, b) => a < b ? a : b);
-                }
+                };
                 if (address + BigInt(args.count) > nextPageStart) {
                     unreadableBytes = minBigInt(maxUnreadable, nextPageStart - readEnd);
                 } else {
