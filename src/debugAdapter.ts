@@ -1,5 +1,6 @@
 import * as DebugAdapter from '@vscode/debugadapter';
 import { ContinuedEvent, DebugSession, Handles, InitializedEvent, OutputEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ThreadEvent } from '@vscode/debugadapter';
+import { LogLevel } from '@vscode/debugadapter/lib/logger';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { execSync } from 'child_process';
 import * as fs from "fs";
@@ -10,10 +11,9 @@ import { Breakpoint, MIError, MIReadMemoryResult, ValuesFormattingMode, Variable
 import { MI2 } from './backend/mi2/mi2';
 import { MI2_LLDB } from './backend/mi2/mi2lldb';
 import { MINode } from './backend/miParse';
-import { CppDbgAttachRequestArguments, CppDbgLaunchRequestArguments, LoggingSetup, SourceFileMapInfo } from './types';
-import { SourceFileMap } from "./sourceFileMap";
 import { logger, LoggingCategory } from './logger';
-import { LogLevel } from '@vscode/debugadapter/lib/logger';
+import { SourceFileMap } from "./sourceFileMap";
+import { CppDbgAttachRequestArguments, CppDbgLaunchRequestArguments, SourceFileMapInfo } from './types';
 
 class VariableScope {
     constructor(public readonly name: string, public readonly threadId: number, public readonly level: number) {
@@ -184,17 +184,42 @@ export class CppDebugSession extends DebugSession {
     //#region DebugSession
 
     protected override initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
-        response.body = response.body || {};
-        response.body.supportsGotoTargetsRequest = true;
-        response.body.supportsHitConditionalBreakpoints = true;
-        response.body.supportsConfigurationDoneRequest = true;
-        response.body.supportsConditionalBreakpoints = true;
-        response.body.supportsFunctionBreakpoints = true;
-        response.body.supportsEvaluateForHovers = true;
-        response.body.supportsSetVariable = true;
-        response.body.supportsStepBack = true;
-        response.body.supportsLogPoints = true;
-        response.body.supportsReadMemoryRequest = true;
+        response.body = {
+            supportsConfigurationDoneRequest: true,
+            supportsFunctionBreakpoints: true,
+            supportsConditionalBreakpoints: true,
+            supportsEvaluateForHovers: true,
+            // exceptionBreakpointFilters: [
+            //     {
+            //         filter: "all",
+            //         label: "All C++ Exceptions",
+            //         default: false,
+            //         supportsCondition: true,
+            //         conditionDescription: "std::out_of_range,std::invalid_argument"
+            //     }
+            // ],
+            supportsSetVariable: true,
+            supportsGotoTargetsRequest: true,
+            // supportsCompletionsRequest: true,
+            // completionTriggerCharacters: [],
+            // supportsModulesRequest: true,
+            // supportedChecksumAlgorithms: [],
+            // supportsValueFormattingOptions: true,
+            supportsLogPoints: true,
+            // supportsSetExpression: true,
+            // supportsDataBreakpoints: true,
+            supportsReadMemoryRequest: true,
+            // supportsDisassembleRequest: true,
+            // supportsClipboardContext: true,
+            // supportsSteppingGranularity: true,
+            // supportsInstructionBreakpoints: true,
+            // supportsExceptionFilterOptions: true,
+
+            // Cpp Debug doesn't support following two features yet
+            // supportsHitConditionalBreakpoints: true,
+            // supportsStepBack: true,
+        };
+
         this.sendResponse(response);
     }
 
