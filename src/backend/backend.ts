@@ -1,5 +1,6 @@
 import { DebugProtocol } from "@vscode/debugprotocol";
 import { MINode } from "./miParse";
+import { MI2 } from "./mi2/mi2";
 
 export type ValuesFormattingMode = "disabled" | "parseText" | "prettyPrinters";
 
@@ -84,6 +85,13 @@ export class ThreadInfo implements DebugProtocol.Thread {
     }
 }
 
+export interface MIReadMemoryResult {
+    begin: bigint;
+    offset: bigint;
+    end: bigint;
+    contents: string;
+}
+
 export interface Stack {
     level: number;
     address: string;
@@ -159,7 +167,10 @@ export class VariableObject {
     displayhint: string;
     hasMore: boolean;
     id!: number;
-    constructor(node: any) {
+    miDebugger: MI2;
+
+    constructor(node: any, miDebugger: MI2) {
+        this.miDebugger = miDebugger;
         this.name = MINode.valueOf(node, "name");
         this.exp = MINode.valueOf(node, "exp");
         this.numchild = parseInt(MINode.valueOf(node, "numchild"));
@@ -197,7 +208,42 @@ export class VariableObject {
             type: this.type,
             variablesReference: this.id
         };
+        const memoryRefernece = this.memoryReference;
+        if (memoryRefernece) {
+            res.memoryReference = memoryRefernece;
+        }
+
         return res;
+    }
+
+    get memoryReference(): string | undefined {
+        let value = this.value;
+        if (value.length === 0) {
+            return;
+        }
+
+        // This is the evaluation result of a GDB array, which does not contain an address and needs to be re-evaluated with an address-of expression
+        if (value[0] === '[' && value[this.value.length - 1] === ']') {
+            const expression = `&(${this.name})`;
+            // FIXME: pass the real threadid and frameid
+            const miNode = this.miDebugger.evalExpression(expression, 0, 0);
+            value = MINode.valueOf(miNode, "value");
+        }
+
+        // This is the evaluation result of a GDB struct, which does not contain an address and needs to be re-evaluated with an address-of expression
+        if (value[0] === '{') {
+            const index = value.indexOf('}');
+            if (index === -1) {
+                return;
+            }
+            value = value.substring(index+1).trim();
+        }
+
+        if (isNaN(parseInt(value)) ){
+            return;
+        }
+
+        return value;
     }
 }
 

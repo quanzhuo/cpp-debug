@@ -5,7 +5,7 @@ import * as net from "net";
 import * as path from "path";
 import { Client, ClientChannel, ExecOptions } from "ssh2";
 import { logger, LoggingCategory } from "../../logger";
-import { Breakpoint, IBackend, MIError, RegisterValue, SSHArguments, Stack, ThreadInfo, Variable, VariableObject } from "../backend";
+import { Breakpoint, IBackend, MIError, MIReadMemoryResult, RegisterValue, SSHArguments, Stack, ThreadInfo, Variable, VariableObject } from "../backend";
 import * as linuxTerm from '../linux/console';
 import { MINode, parseMI } from '../miParse';
 
@@ -894,6 +894,23 @@ export class MI2 extends EventEmitter implements IBackend {
         });
     }
 
+    readProcessMemory(address: bigint, count: number): Promise<MIReadMemoryResult> {
+        return new Promise((resolve, reject) => {
+            this.sendCommand(`data-read-memory-bytes 0x${address.toString(16).padStart(16, '0')} ${count}`, true).then((result: MINode) => {
+                if (result.resultRecords.resultClass === "error") {
+                    reject(result.result("msg"));
+                    return;
+                }
+                resolve({
+                    begin: BigInt(result.result("memory[0].begin")),
+                    offset: BigInt(result.result("memory[0].offset")),
+                    end: BigInt(result.result("memory[0].end")),
+                    contents: result.result("memory[0].contents"),
+                });
+            }, reject);
+        });
+    }
+
     async evalExpression(name: string, thread: number, frame: number): Promise<MINode> {
         let command = "data-evaluate-expression ";
         if (thread !== 0) {
@@ -910,7 +927,7 @@ export class MI2 extends EventEmitter implements IBackend {
             miCommand += `--thread ${threadId} --frame ${frameLevel}`;
         }
         const res = await this.sendCommand(`${miCommand} ${this.quote(name)} ${frame} "${expression}"`);
-        return new VariableObject(res.result(""));
+        return new VariableObject(res.result(""), this);
     }
 
     async varEvalExpression(name: string): Promise<MINode> {
@@ -921,7 +938,7 @@ export class MI2 extends EventEmitter implements IBackend {
         //TODO: add `from` and `to` arguments
         const res = await this.sendCommand(`var-list-children --all-values ${this.quote(name)}`);
         const children = res.result("children") || [];
-        const omg: VariableObject[] = children.map((child: any) => new VariableObject(child[1]));
+        const omg: VariableObject[] = children.map((child: any) => new VariableObject(child[1], this));
         return omg;
     }
 
