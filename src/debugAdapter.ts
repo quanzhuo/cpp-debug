@@ -200,8 +200,8 @@ export class CppDebugSession extends DebugSession {
             // ],
             supportsSetVariable: true,
             supportsGotoTargetsRequest: true,
-            // supportsCompletionsRequest: true,
-            // completionTriggerCharacters: [],
+            supportsCompletionsRequest: true,
+            completionTriggerCharacters: [],
             // supportsModulesRequest: true,
             // supportedChecksumAlgorithms: [],
             // supportsValueFormattingOptions: true,
@@ -769,6 +769,47 @@ export class CppDebugSession extends DebugSession {
 
     protected override gotoRequest(response: DebugProtocol.GotoResponse, args: DebugProtocol.GotoArguments): void {
         this.sendResponse(response);
+    }
+
+    protected override completionsRequest(response: DebugProtocol.CompletionsResponse, args: DebugProtocol.CompletionsArguments, request?: DebugProtocol.Request): void {
+        // if debug is not stopped, return error code 1105, and error string: Unable to perform this action because the process is running.
+        // if (this.miDebugger.isRunning()) {
+        //     this.sendErrorResponse(response, 1105, "Unable to perform this action because the process is running.");
+        //     return;
+        // }
+        if (args.frameId) {
+            const [threadId, level] = this.frameIdToThreadAndLevel(args.frameId);
+            let command: string;
+            let prefix: string;
+            if (args.text.startsWith('-exec ')) {
+                prefix = '-exec ';
+                command = args.text.substring(6);
+            } else if (args.text.startsWith('`')) {
+                prefix = '`';
+                command = args.text.substring(1);
+            } else {
+                this.sendResponse(response);
+                return;
+            }
+
+            this.miDebugger.completions(command, threadId, level).then((completions) => {
+                const matches: string[] = [];
+                for (const comp of completions) {
+                    matches.push(prefix + comp);
+                }
+                response.body = {
+                    targets: matches.map(m => ({
+                        label: m,
+                        type: 'text',
+                        start: 0,
+                        length: m.length
+                    }))
+                };
+                this.sendResponse(response);
+            }, msg => {
+                this.sendErrorResponse(response, 1104, `Could not get completions: ${msg}`);
+            });
+        }
     }
 
     //#endregion

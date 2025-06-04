@@ -1013,6 +1013,23 @@ export class MI2 extends EventEmitter implements IBackend {
         return /^-|[^\w\d\/_\-\.]/g.test(text) ? ('"' + escape(text) + '"') : text;
     }
 
+    public completions(command: string, threadId: number = 0, frameLevel: number = 0): Thenable<string[]> {
+        return new Promise((resolve, reject) => {
+            this.sendCommand(`complete "${command}"`, true).then((result: MINode) => {
+                if (result.resultRecords.resultClass === "done") {
+                    const completions: string[] = result.result("matches");
+                    if (Array.isArray(completions)) {
+                        resolve(completions);
+                    } else {
+                        resolve([]);
+                    }
+                } else {
+                    reject(new MIError(result.result("msg") || "Failed to retrieve completions", command));
+                }
+            }, reject);
+        });
+    }
+
     prettyPrint: boolean = true;
     frameFilters: boolean = true;
 
