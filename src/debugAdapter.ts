@@ -106,17 +106,6 @@ export class CppDebugSession extends DebugSession {
         }
     }
 
-    private setValuesFormattingMode(mode: ValuesFormattingMode) {
-        switch (mode) {
-            case "disabled":
-                this.miDebugger.prettyPrint = false;
-                break;
-            case "prettyPrinters":
-                this.miDebugger.prettyPrint = true;
-                break;
-        }
-    }
-
     private handleMsg(type: string, msg: string) {
         if (type === "target") {
             type = "stdout";
@@ -244,14 +233,12 @@ export class CppDebugSession extends DebugSession {
             }
         }
 
-        // FIXME: split
-        const debuggerArgs: string[] = args.miDebuggerArgs ? args.miDebuggerArgs.split(' ') : [];
+        const debuggerArgs: string[] = args.miDebuggerArgs ? args.miDebuggerArgs.split(/\s+/) : [];
         if (this.miMode === 'gdb') {
             this.miDebugger = new MI2(miDebuggerPath, ["--interpreter=mi2"], debuggerArgs, env);
         } else {
             this.miDebugger = new MI2_LLDB(miDebuggerPath, [], debuggerArgs, env);
         }
-
 
         if (args.sourceFileMap) {
             this.setSourceFileMapInfo(args.sourceFileMap);
@@ -263,10 +250,10 @@ export class CppDebugSession extends DebugSession {
         this.isSSH = false;
         this.started = false;
         this.crashed = false;
-        this.setValuesFormattingMode('prettyPrinters');
         this.miDebugger.frameFilters = true;
         this.stopAtEntry = args.stopAtEntry ?? false;
         this.miDebugger.registerLimit = "";
+        this.miDebugger.setupCommands = args.setupCommands ?? [];
 
         const progArgs = (args.args ?? []).join(' ');
         // TODO: change args.terminal to undefined is miMode === 'lldb'
@@ -304,11 +291,12 @@ export class CppDebugSession extends DebugSession {
         this.attached = true;
         this.initialRunCommand = RunCommand.NONE;
         this.isSSH = false;
-        this.setValuesFormattingMode('prettyPrinters');
         this.miDebugger.frameFilters = true;
         // FIXME: 针对 attach 类型，不应该有 stopAtEntry 设置项
         this.stopAtEntry = false;
         this.miDebugger.registerLimit = "";
+        this.miDebugger.setupCommands = args.setupCommands ?? [];
+
         this.miDebugger.attach('', args.program, args.program, []).then(() => {
             this.sendResponse(response);
         }, err => {
@@ -949,7 +937,6 @@ export class CppDebugSession extends DebugSession {
             } else {
                 this.sendErrorResponse(response, 21, `Could not read memory, readMemoryArguments: ${JSON.stringify(args)}`);
             }
-
         });
     }
 

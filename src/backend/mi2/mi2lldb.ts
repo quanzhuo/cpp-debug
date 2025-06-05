@@ -38,8 +38,8 @@ export class MI2_LLDB extends MI2 {
 
     override attach(cwd: string, executable: string, target: string, autorun: string[]): Thenable<any> {
         return new Promise((resolve, reject) => {
-            const args = this.preargs.concat(this.extraargs || []);
-            this.process = ChildProcess.spawn(this.application, args, { cwd: cwd, env: this.procEnv });
+            const args = this.preArgs.concat(this.extraArgs || []);
+            this.process = ChildProcess.spawn(this.miDebugger, args, { cwd: cwd, env: this.procEnv });
             this.process.stdout?.on("data", this.stdout.bind(this));
             this.process.stderr?.on("data", this.stderr.bind(this));
             this.process.on("exit", () => this.emit("quit"));

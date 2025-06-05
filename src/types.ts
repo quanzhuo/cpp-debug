@@ -1,6 +1,6 @@
 import { DebugProtocol } from "@vscode/debugprotocol";
 
-interface DebuggerCommand {
+export interface DebuggerCommand {
     /**
      * The debugger command to execute.
      */

@@ -8,6 +8,7 @@ import { logger, LoggingCategory } from "../../logger";
 import { Breakpoint, IBackend, MIError, MIReadMemoryResult, RegisterValue, SSHArguments, Stack, ThreadInfo, Variable, VariableObject } from "../backend";
 import * as linuxTerm from '../linux/console';
 import { MINode, parseMI } from '../miParse';
+import { DebuggerCommand } from "../../types";
 
 export function escape(str: string) {
     return str.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
@@ -69,7 +70,16 @@ class LogMessage {
 }
 
 export class MI2 extends EventEmitter implements IBackend {
-    constructor(public application: string, public preargs: string[], public extraargs: string[], procEnv: { [key: string]: string }, public extraCommands: string[] = []) {
+    public setupCommands: DebuggerCommand[] = [];
+
+    constructor(
+        public miDebugger: string,
+        public preArgs: string[],
+        public extraArgs: string[],
+        procEnv: { [key: string]: string },
+        // TODO: remove `extraCommands`, use setupCommands instead.
+        public extraCommands: string[] = [],
+    ) {
         super();
 
         if (procEnv) {
@@ -103,8 +113,8 @@ export class MI2 extends EventEmitter implements IBackend {
 
         return new Promise((resolve, reject) => {
             this.isSSH = false;
-            const args = this.preargs.concat(this.extraargs || []);
-            this.process = ChildProcess.spawn(this.application, args, { cwd: cwd, env: this.procEnv });
+            const args = this.preArgs.concat(this.extraArgs || []);
+            this.process = ChildProcess.spawn(this.miDebugger, args, { cwd: cwd, env: this.procEnv });
             this.process.stdout!.on("data", this.stdout.bind(this));
             this.process.stderr!.on("data", this.stderr.bind(this));
             this.process.on("exit", () => this.emit("quit"));
@@ -193,7 +203,7 @@ export class MI2 extends EventEmitter implements IBackend {
             }
 
             this.sshConn.on("ready", () => {
-                this.log("stdout", "Running " + this.application + " over ssh...");
+                this.log("stdout", "Running " + this.miDebugger + " over ssh...");
                 const execArgs: ExecOptions = {};
                 if (args.forwardX11) {
                     execArgs.x11 = {
@@ -201,11 +211,11 @@ export class MI2 extends EventEmitter implements IBackend {
                         screen: args.remotex11screen
                     };
                 }
-                let sshCMD = this.application + " " + this.preargs.concat(this.extraargs || []).join(" ");
+                let sshCMD = this.miDebugger + " " + this.preArgs.concat(this.extraArgs || []).join(" ");
                 if (args.bootstrap) { sshCMD = args.bootstrap + " && " + sshCMD; }
                 this.sshConn.exec(sshCMD, execArgs, (err, stream) => {
                     if (err) {
-                        this.log("stderr", "Could not run " + this.application + "(" + sshCMD + ") over ssh!");
+                        this.log("stderr", "Could not run " + this.miDebugger + "(" + sshCMD + ") over ssh!");
                         if (err === undefined) {
                             err = new Error("<reason unknown>");
                         }
@@ -237,7 +247,7 @@ export class MI2 extends EventEmitter implements IBackend {
                     }, reject);
                 });
             }).on("error", (err) => {
-                this.log("stderr", "Error running " + this.application + " over ssh!");
+                this.log("stderr", "Error running " + this.miDebugger + " over ssh!");
                 if (err === undefined) {
                     err = new Error("<reason unknown>");
                 }
@@ -272,19 +282,22 @@ export class MI2 extends EventEmitter implements IBackend {
                     resolve(undefined);
                 });
             }),
-            this.sendCommand("environment-directory \"" + escape(cwd) + "\"", true)
+            this.sendCommand('environment-directory "' + escape(cwd) + '"', true)
         ];
         if (!attach) {
-            cmds.push(this.sendCommand("file-exec-and-symbols \"" + escape(target) + "\""));
+            cmds.push(this.sendCommand('file-exec-and-symbols "' + escape(target) + '"'));
         }
-        if (this.prettyPrint) {
-            cmds.push(this.sendCommand("enable-pretty-printing"));
-        }
+
         if (this.frameFilters) {
             cmds.push(this.sendCommand("enable-frame-filters"));
         }
+
         for (const cmd of this.extraCommands) {
             cmds.push(this.sendCommand(cmd));
+        }
+
+        for (const cmd of this.setupCommands) {
+            cmds.push(this.sendMiCommand(cmd.text, cmd.ignoreFailures));
         }
 
         return cmds;
@@ -296,8 +309,8 @@ export class MI2 extends EventEmitter implements IBackend {
             if (executable && !path.isAbsolute(executable)) {
                 executable = path.join(cwd, executable);
             }
-            args = this.preargs.concat(this.extraargs || []);
-            this.process = ChildProcess.spawn(this.application, args, { cwd: cwd, env: this.procEnv });
+            args = this.preArgs.concat(this.extraArgs || []);
+            this.process = ChildProcess.spawn(this.miDebugger, args, { cwd: cwd, env: this.procEnv });
             this.process.stdout!.on("data", this.stdout.bind(this));
             this.process.stderr!.on("data", this.stderr.bind(this));
             this.process.on("exit", () => this.emit("quit"));
@@ -329,11 +342,11 @@ export class MI2 extends EventEmitter implements IBackend {
             if (executable && !path.isAbsolute(executable)) {
                 executable = path.join(cwd, executable);
             }
-            args = this.preargs.concat(this.extraargs || []);
+            args = this.preArgs.concat(this.extraArgs || []);
             if (executable) {
                 args = args.concat([executable]);
             }
-            this.process = ChildProcess.spawn(this.application, args, { cwd: cwd, env: this.procEnv });
+            this.process = ChildProcess.spawn(this.miDebugger, args, { cwd: cwd, env: this.procEnv });
             this.process.stdout!.on("data", this.stdout.bind(this));
             this.process.stderr!.on("data", this.stderr.bind(this));
             this.process.on("exit", () => this.emit("quit"));
@@ -985,6 +998,10 @@ export class MI2 extends EventEmitter implements IBackend {
         return this.sendCommand(miCommand);
     }
 
+    sendMiCommand(command: string, suppressFailure: boolean = false): Thenable<MINode> {
+        return this.sendCommand(command.substring(1), suppressFailure);
+    }
+
     sendCommand(command: string, suppressFailure: boolean = false): Thenable<MINode> {
         const sel = this.currentToken++;
         return new Promise((resolve, reject) => {
@@ -1030,7 +1047,6 @@ export class MI2 extends EventEmitter implements IBackend {
         });
     }
 
-    prettyPrint: boolean = true;
     frameFilters: boolean = true;
 
     features: string[] = [];
