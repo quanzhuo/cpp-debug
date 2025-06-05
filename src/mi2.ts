@@ -4,11 +4,11 @@ import * as fs from "fs";
 import * as net from "net";
 import * as path from "path";
 import { Client, ClientChannel, ExecOptions } from "ssh2";
-import { logger, LoggingCategory } from "../../logger";
-import { Breakpoint, IBackend, MIError, MIReadMemoryResult, RegisterValue, SSHArguments, Stack, ThreadInfo, Variable, VariableObject } from "../backend";
-import * as linuxTerm from '../linux/console';
-import { MINode, parseMI } from '../miParse';
-import { DebuggerCommand } from "../../types";
+import { logger, LoggingCategory } from "./logger";
+import { Breakpoint, IBackend, MIError, MIReadMemoryResult, RegisterValue, SSHArguments, Stack, ThreadInfo, Variable, VariableObject } from "./backend";
+import * as linuxTerm from './console';
+import { MINode, parseMI } from './miParse';
+import { DebuggerCommand } from "./types";
 
 export function escape(str: string) {
     return str.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
@@ -81,28 +81,25 @@ export class MI2 extends EventEmitter implements IBackend {
         public extraCommands: string[] = [],
     ) {
         super();
-
-        if (procEnv) {
-            const env: { [key: string]: string } = {};
-            // Duplicate process.env so we don't override it
-            for (const key in process.env) {
-                if (process.env.hasOwnProperty(key)) {
-                    env[key] = process.env[key]!;
-                }
+        const env: { [key: string]: string } = {};
+        // Duplicate process.env so we don't override it
+        for (const key in process.env) {
+            if (process.env.hasOwnProperty(key)) {
+                env[key] = process.env[key]!;
             }
-
-            // Overwrite with user specified variables
-            for (const key in procEnv) {
-                if (procEnv.hasOwnProperty(key)) {
-                    if (procEnv === undefined) {
-                        delete env[key];
-                    } else {
-                        env[key] = procEnv[key];
-                    }
-                }
-            }
-            this.procEnv = env;
         }
+
+        // Overwrite with user specified variables
+        for (const key in procEnv) {
+            if (procEnv.hasOwnProperty(key)) {
+                if (procEnv === undefined) {
+                    delete env[key];
+                } else {
+                    env[key] = procEnv[key];
+                }
+            }
+        }
+        this.procEnv = env;
     }
     protected logMessage: LogMessage = new LogMessage;
 
@@ -1050,8 +1047,7 @@ export class MI2 extends EventEmitter implements IBackend {
     frameFilters: boolean = true;
 
     features: string[] = [];
-    public procEnv: any;
-
+    public procEnv: { [key: string]: string };
     protected process!: ChildProcess.ChildProcess;
 
     private isSSH: boolean = false;
