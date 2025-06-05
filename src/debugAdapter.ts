@@ -252,7 +252,6 @@ export class CppDebugSession extends DebugSession {
         this.crashed = false;
         this.miDebugger.frameFilters = true;
         this.stopAtEntry = args.stopAtEntry ?? false;
-        this.miDebugger.registerLimit = "";
         this.miDebugger.setupCommands = args.setupCommands ?? [];
 
         const progArgs = (args.args ?? []).join(' ');
@@ -273,8 +272,7 @@ export class CppDebugSession extends DebugSession {
             miDebuggerPath = miMode === 'gdb' ? 'gdb' : 'lldb-mi';
         }
 
-        // FIXME: split
-        const debuggerArgs: string[] = args.miDebuggerArgs ? args.miDebuggerArgs.split(' ') : [];
+        const debuggerArgs: string[] = args.miDebuggerArgs ? args.miDebuggerArgs.split(/\s+/) : [];
 
         // for attach, cpp debug doesn't support pass environment
         if (miMode === 'gdb') {
@@ -294,7 +292,6 @@ export class CppDebugSession extends DebugSession {
         this.miDebugger.frameFilters = true;
         // FIXME: 针对 attach 类型，不应该有 stopAtEntry 设置项
         this.stopAtEntry = false;
-        this.miDebugger.registerLimit = "";
         this.miDebugger.setupCommands = args.setupCommands ?? [];
 
         this.miDebugger.attach('', args.program, args.program, []).then(() => {

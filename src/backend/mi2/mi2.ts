@@ -886,7 +886,7 @@ export class MI2 extends EventEmitter implements IBackend {
     }
 
     async getRegisterValues(): Promise<RegisterValue[]> {
-        const result = await this.sendCommand("data-list-register-values --skip-unavailable N " + this.registerLimit);
+        const result = await this.sendCommand("data-list-register-values N");
         const nodes = result.result('register-values');
         if (!Array.isArray(nodes)) {
             throw new Error('Failed to retrieve register values.');
@@ -1051,7 +1051,6 @@ export class MI2 extends EventEmitter implements IBackend {
 
     features: string[] = [];
     public procEnv: any;
-    public registerLimit: string = "";
 
     protected process!: ChildProcess.ChildProcess;
 
