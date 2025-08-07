@@ -2,3 +2,4 @@ node_modules/
 debugAdapter/
 out/
 *.vsix
+dist/

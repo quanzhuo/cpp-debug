@@ -11,5 +11,6 @@ vsc-extension-quickstart.md
 **/.vscode-test.*
 node_modules/**
 *.vsix
-out/test/**
+out/**
 build.mjs
+esbuild.js
