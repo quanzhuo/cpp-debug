@@ -1,6 +1,6 @@
 {
   "name": "cppdebug",
-  "displayName": "Cpp Debug (gdb/lldb)",
+  "displayName": "C/C+++ Debug (gdb)",
   "description": "",
   "version": "0.0.2",
   "engines": {
@@ -26,7 +26,7 @@
     "debuggers": [
       {
         "type": "cppdbg",
-        "label": "Cpp Debug(GDB/LLDB)",
+        "label": "C/C++ (gdb)",
         "languages": [
           "ada",
           "c",
@@ -1791,10 +1791,10 @@
         },
         "initialConfigurations": [
           {
-            "name": "C++ Launch Application",
+            "name": "C/C++ Debug (Launch)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/a.out",
+            "program": "此处输入可执行程序的路径，例如：${workspaceFolder}/a.out",
             "args": [],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
@@ -1811,22 +1811,30 @@
         ],
         "configurationSnippets": [
           {
-            "label": "C++ Launch",
+            "label": "C/C++ Debug (Launch)",
             "description": "Launch a C++ program",
             "body": {
-              "name": "Launch Application",
+              "name": "C/C++ Debug (Launch)",
               "type": "cppdbg",
               "request": "launch",
-              "program": "${workspaceFolder}/a.out",
+              "program": "此处输入可执行程序的路径，例如：${workspaceFolder}/a.out",
               "args": [],
               "stopAtEntry": true,
               "cwd": "${workspaceFolder}",
-              "externalConsole": true
+              "environment": [],
+              "MIMode": "gdb",
+              "setupCommands": [
+                {
+                  "description": "Enable pretty-printing for gdb",
+                  "text": "-enable-pretty-printing",
+                  "ignoreFailures": true
+                }
+              ]
             }
           },
           {
-            "label": "C++ Attach to Process",
-            "description": "Attach to a running C++ program",
+            "label": "C/C++ Debug (Attach)",
+            "description": "Attach to a running C/C++ program",
             "body": {
               "name": "Attach to Process",
               "type": "cppdbg",
