@@ -15,14 +15,12 @@
     "onLanguage:cpp",
     "onDebugResolve:cppdbg"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/quanzhuo/debug"
+  },
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "debug.helloWorld",
-        "title": "Hello World"
-      }
-    ],
     "debuggers": [
       {
         "type": "cppdbg",
