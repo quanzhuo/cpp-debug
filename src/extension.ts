@@ -58,11 +58,14 @@ class CppDbgConfigurationProvider implements vscode.DebugConfigurationProvider {
 	 * 用于在启动调试会话之前解析和修改调试配置。它允许你在用户启动调试之前对调试配置进行最后的调整或验证。
 	 */
 	resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration, token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration> {
+		if (!config.program) {
+			return null;
+		}
+
 		if (!config.type && !config.request && !config.name) {
 			config.type = 'cppdbg';
 			config.request = 'launch';
 			config.name = 'Launch Program';
-			config.program = 'gaga';
 			config.stopAtEntry = true;
 		}
 		return config;
