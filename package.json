@@ -26,7 +26,7 @@
     "debuggers": [
       {
         "type": "cppdbg",
-        "label": "C++ (GDB/LLDB)",
+        "label": "Cpp Debug(GDB/LLDB)",
         "languages": [
           "ada",
           "c",
