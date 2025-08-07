@@ -1,6 +1,11 @@
 # Cpp Debug README
 
+[中文说明](#cpp-debug-说明)
+
 This extension integrates [MIEngine](https://github.com/microsoft/MIEngine), support debugging of C/C++ programs using gdb.
+
+* Although MIEngine support lldb, this extension mainly support gdb, so we test little on lldb
+* Since this extension use the same debug adaptor(MIEngine) as ms-vscode.cpptools, the same type attribute "cppdbg" is set as ms-vscode.cpptools. The launch.json file using for ms-vscode.cpptools might use for this extension directly
 
 ## Requirements
 
@@ -57,24 +62,24 @@ Tells GDB or LLDB what paths to search for .so files. Separate multiple paths wi
 
 Used only when launching the debuggee. For `attach`, this parameter does not change the debuggee's behavior.
 
-- **Windows**: When set to true, it will spawn an external console. When set to false, it will use VS Code's integratedTerminal.
-- **Linux**: When set to true, it will notify VS Code to spawn an external console. When set to false, it will use VS Code's integratedTerminal.
-- **macOS**: When set to true, it will spawn an external console through `lldb-mi`. When set to false, the output can be seen in VS Code's debugConsole. Due to limitations within `lldb-mi`, integratedTerminal support is not available.
+* **Windows**: When set to true, it will spawn an external console. When set to false, it will use integratedTerminal.
+* **Linux**: When set to true, it will spawn an external console. When set to false, it will use integratedTerminal.
+* **macOS**: When set to true, it will spawn an external console through `lldb-mi`. When set to false, the output can be seen in debugConsole. Due to limitations within `lldb-mi`, integratedTerminal support is not available.
 
 ### avoidWindowsConsoleRedirection
 
-In order to support VS Code's Integrated Terminal with gdb on Windows, the extension adds console redirection commands to the debuggee's arguments to have console input and output show up in the integrated terminal. Setting this option to `true` will disable it.
+In order to support Integrated Terminal with gdb on Windows, the extension adds console redirection commands to the debuggee's arguments to have console input and output show up in the integrated terminal. Setting this option to `true` will disable it.
 
 ### logging
 
 Optional flags to determine what types of messages should be logged to the Debug Console.
 
-- **exceptions**: Optional flag to determine whether exception messages should be logged to the Debug Console. Defaults to true.
-- **moduleLoad**: Optional flag to determine whether module load events should be logged to the Debug Console. Defaults to true.
-- **programOutput**: Optional flag to determine whether program output should be logged to the Debug Console. Defaults to true.
-- **engineLogging**: Optional flag to determine whether diagnostic engine logs should be logged to the Debug Console. Defaults to false.
-- **trace**: Optional flag to determine whether diagnostic adapter command tracing should be logged to the Debug Console. Defaults to false.
-- **traceResponse**: Optional flag to determine whether diagnostic adapter command and response tracing should be logged to the Debug Console. Defaults to false.
+* **exceptions**: Optional flag to determine whether exception messages should be logged to the Debug Console. Defaults to true.
+* **moduleLoad**: Optional flag to determine whether module load events should be logged to the Debug Console. Defaults to true.
+* **programOutput**: Optional flag to determine whether program output should be logged to the Debug Console. Defaults to true.
+* **engineLogging**: Optional flag to determine whether diagnostic engine logs should be logged to the Debug Console. Defaults to false.
+* **trace**: Optional flag to determine whether diagnostic adapter command tracing should be logged to the Debug Console. Defaults to false.
+* **traceResponse**: Optional flag to determine whether diagnostic adapter command and response tracing should be logged to the Debug Console. Defaults to false.
 
 ### visualizerFile
 
@@ -131,7 +136,7 @@ Environment variables to add to the environment for the program. Example: `[ { "
 
 ### MIMode
 
-Indicates the debugger that VS Code will connect to. Must be set to `gdb` or `lldb`. This is pre-configured on a per-operating system basis and can be changed as needed.
+Indicates the debugger that will connect to. Must be set to `gdb` or `lldb`. This is pre-configured on a per-operating system basis and can be changed as needed.
 
 ### miDebuggerPath
 
@@ -190,8 +195,8 @@ The command to execute after the debugger is fully set up in order to cause the 
 
 ### symbolLoadInfo
 
-- **loadAll**: If true, symbols for all libs will be loaded, otherwise no solib symbols will be loaded. Modified by ExceptionList. Default value is true.
-- **exceptionList**: List of filenames (wildcards allowed) separated by semicolons `;`. Modifies behavior of LoadAll. If LoadAll is true then don't load symbols for libs that match any name in the list. Otherwise only load symbols for libs that match. Example: ```"foo.so;bar.so"```
+* **loadAll**: If true, symbols for all libs will be loaded, otherwise no solib symbols will be loaded. Modified by ExceptionList. Default value is true.
+* **exceptionList**: List of filenames (wildcards allowed) separated by semicolons `;`. Modifies behavior of LoadAll. If LoadAll is true then don't load symbols for libs that match any name in the list. Otherwise only load symbols for libs that match. Example: ```"foo.so;bar.so"```
 
 ### dumpPath
 
@@ -208,7 +213,7 @@ Indicates whether the configuration section is intended to `launch` the program 
 
 ### targetArchitecture
 
-`Deprecated` This option is no longer needed as the target architecture is automatically detected.
+Deprecated, This option is no longer needed as the target architecture is automatically detected.
 
 ### type
 
@@ -217,3 +222,228 @@ Indicates the underlying debugger being used. Must be `cppdbg`。
 ### sourceFileMap
 
 This allows mapping of the compile-time paths for source to local source locations. It is an object of key/value pairs and will resolve the first string-matched path. (example: `"sourceFileMap": { "/mnt/c": "c:\\" }` will map any path returned by the debugger that begins with `/mnt/c` and convert it to `c:\\`. You can have multiple mappings in the object but they will be handled in the order provided.)
+
+# Cpp Debug 说明
+
+[Readme in English](#cpp-debug-readme)
+
+此扩展集成了 [MIEngine](https://github.com/microsoft/MIEngine)，支持使用 gdb 调试 C/C++ 程序。
+
+* 尽管 MIEngine 支持 lldb，但此扩展主要支持 gdb，因此我们对 lldb 的测试较少
+* 由于此扩展使用与 ms-vscode.cpptools 相同的调试适配器（MIEngine），因此设置了与 ms-vscode.cpptools 相同的类型属性 "cppdbg"。用于 ms-vscode.cpptools 的 launch.json 文件可能直接用于此扩展
+
+## 要求
+
+你需要在电脑上安装 gdb。
+
+## 配置 C/C++ 调试
+
+`launch.json` 文件用于配置调试器。要开始调试，你需要在 `program` 字段中填写你计划调试的可执行文件的路径。
+
+示例配置
+
+```json
+{
+    "name": "C++ Launch",
+    "type": "cppdbg",
+    "request": "launch",
+    "program": "此处请设置为被调试的程序路径，例如：${workspaceFolder}/a.out",
+    "args": [],
+    "stopAtEntry": false,
+    "cwd": "${workspaceFolder}",
+    "environment": [],
+    "externalConsole": false,
+    "MIMode": "gdb",
+    "setupCommands": [
+        {
+            "description": "Enable pretty-printing for gdb",
+            "text": "-enable-pretty-printing",
+            "ignoreFailures": true
+        }
+    ],
+    "miDebuggerPath": "/usr/bin/gdb"
+}
+```
+
+## 详细配置
+
+### program（必需）
+
+指定调试器将启动或附加到的可执行文件的完整路径。调试器需要此位置以加载调试符号。
+
+### symbolSearchPath
+
+告诉 Visual Studio Windows 调试器要搜索符号 (.pdb) 文件的路径。用分号分隔多个路径。例如：`"C:\\Symbols;C:\\SymbolDir2"`。
+
+### requireExactSource
+
+一个可选标志，告诉 Visual Studio Windows 调试器要求当前源代码与 pdb 匹配。
+
+### additionalSOLibSearchPath
+
+告诉 GDB 或 LLDB 要搜索 .so 文件的路径。用分号分隔多个路径。例如：`"/Users/user/dir1;/Users/user/dir2"`。
+
+### externalConsole
+
+仅在启动被调试程序时使用。对于 `attach`，此参数不会更改被调试程序的行为。
+
+* **Windows**：当设置为 true 时，它将生成一个外部控制台。当设置为 false 时，它将使用集成终端。
+* **Linux**：当设置为 true 时，它将生成一个外部控制台。当设置为 false 时，它将使用集成终端。
+* **macOS**：当设置为 true 时，它将通过 `lldb-mi` 生成一个外部控制台。当设置为 false 时，输出可以在 debugConsole 中看到。由于 `lldb-mi` 的限制，不支持 integratedTerminal。
+
+### avoidWindowsConsoleRedirection
+
+为了支持在 Windows 上使用集成终端，扩展会向被调试程序的参数添加控制台重定向命令，以便在集成终端中显示控制台输入和输出。将此选项设置为 `true` 将禁用它。
+
+### logging
+
+可选标志，用于确定哪些类型的消息应记录到调试控制台。
+
+* **exceptions**：可选标志，用于确定是否将异常消息记录到调试控制台。默认值为 true。
+* **moduleLoad**：可选标志，用于确定是否将模块加载事件记录到调试控制台。默认值为 true。
+* **programOutput**：可选标志，用于确定是否将程序输出记录到调试控制台。默认值为 true。
+* **engineLogging**：可选标志，用于确定是否将诊断引擎日志记录到调试控制台。默认值为 false。
+* **trace**：可选标志，用于确定是否将诊断适配器命令跟踪记录到调试控制台。默认值为 false。
+* **traceResponse**：可选标志，用于确定是否将诊断适配器命令和响应跟踪记录到调试控制台。默认值为 false。
+
+### visualizerFile
+
+调试时使用的 `.natvis` 文件。有关如何创建 Natvis 文件的信息，请参阅 [创建本机对象的自定义视图](https://learn.microsoft.com/visualstudio/debugger/create-custom-views-of-native-objects)。
+
+### showDisplayString
+
+当指定了 `visualizerFile` 时，`showDisplayString` 将启用显示字符串。启用此选项可能会导致调试期间性能变慢。
+
+**示例：**
+
+```json
+{
+   "name": "C++ Launch (Windows)",
+   "type": "cppvsdbg",
+   "request": "launch",
+   "program": "C:\\app1\\Debug\\app1.exe",
+   "symbolSearchPath": "C:\\Symbols;C:\\SymbolDir2",
+   "externalConsole": true,
+   "logging": {
+       "moduleLoad": false,
+       "trace": true
+    },
+   "visualizerFile": "${workspaceFolder}/my.natvis",
+   "showDisplayString": true
+}
+```
+
+### args
+
+传递给程序的命令行参数的 JSON 数组。例如 `["arg1", "arg2"]`。如果你要转义字符，你需要双重转义它们。例如，`["{\\\"arg1\\\": true}"]` 将发送 `{"arg1": true}` 给你的应用程序。
+
+### cwd
+
+设置调试器启动的应用程序的工作目录。
+
+### environment
+
+添加到程序环境中的环境变量。例如：`[ { "name": "config", "value": "Debug" } ]`，而不是 `[ { "config": "Debug" } ]`。
+
+**示例：**
+
+```json
+{
+   "name": "C++ Launch",
+   "type": "cppdbg",
+   "request": "launch",
+   "program": "${workspaceFolder}/a.out",
+   "args": ["arg1", "arg2"],
+   "environment": [{"name": "config", "value": "Debug"}],
+   "cwd": "${workspaceFolder}"
+}
+```
+
+### MIMode
+
+指示连接到的调试器。必须设置为 `gdb` 或 `lldb`。这是根据操作系统预配置的，可以根据需要更改。
+
+### miDebuggerPath
+
+调试器（如 gdb）的路径。当只指定可执行文件时，它将搜索操作系统的 PATH 变量以查找调试器（Linux 和 Windows 上的 GDB，OS X 上的 LLDB）。
+
+### miDebuggerArgs
+
+传递给调试器（如 gdb）的附加参数。
+
+### stopAtEntry
+
+如果设置为 true，调试器应在目标的入口点停止（在附加时忽略）。默认值为 `false`。
+
+### stopAtConnect
+
+如果设置为 true，调试器应在连接到目标后停止。如果设置为 false，调试器将在连接后继续。默认值为 `false`。
+
+### setupCommands
+
+用于设置 GDB 或 LLDB 的命令的 JSON 数组。例如：`"setupCommands": [ { "text": "target-run", "description": "run target", "ignoreFailures": false }]`。
+
+### customLaunchSetupCommands
+
+如果提供，这将用其他命令替换用于启动目标的默认命令。例如，这可以是 "-target-attach" 以附加到目标进程。空命令列表将启动命令替换为空，这在调试器作为命令行选项提供启动选项时很有用。例如：`"customLaunchSetupCommands": [ { "text": "target-run", "description": "run target", "ignoreFailures": false }]`。
+
+### launchCompleteCommand
+
+调试器完全设置后执行的命令，以使目标进程运行。允许的值为 "exec-run"、"exec-continue"、"None"。默认值为 "exec-run"。
+
+**示例：**
+
+```json
+{
+   "name": "C++ Launch",
+   "type": "cppdbg",
+   "request": "launch",
+   "program": "${workspaceFolder}/a.out",
+   "stopAtEntry": false,
+   "customLaunchSetupCommands": [
+      { "text": "target-run", "description": "run target", "ignoreFailures": false }
+   ],
+   "launchCompleteCommand": "exec-run",
+   "linux": {
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb"
+   },
+   "osx": {
+      "MIMode": "lldb"
+   },
+   "windows": {
+      "MIMode": "gdb",
+      "miDebuggerPath": "C:\\MinGw\\bin\\gdb.exe"
+   }
+}
+```
+
+### symbolLoadInfo
+
+* **loadAll**：如果为 true，将加载所有库的符号，否则不加载任何 solib 符号。由 ExceptionList 修改。默认值为 true。
+* **exceptionList**：文件名列表（允许使用通配符），用分号 `;` 分隔。修改 LoadAll 的行为。如果 LoadAll 为 true，则不加载与列表中任何名称匹配的库的符号。否则，仅加载与库匹配的符号。例如：```"foo.so;bar.so"```
+
+### dumpPath
+
+如果你想调试 Windows 转储文件，请将其设置为转储文件的路径，以在 `launch` 配置中开始调试。
+
+### coreDumpPath
+
+要调试的指定程序的核心转储文件的完整路径。将其设置为核心转储文件的路径，以在 `launch` 配置中开始调试。
+_注意：MinGw 不支持核心转储调试。_
+
+### request
+
+指示配置部分是用于 `launch` 程序还是 `attach` 到已运行的实例。
+
+### targetArchitecture
+
+已弃用，此选项不再需要，因为目标架构会自动检测。
+
+### type
+
+指示使用的底层调试器。必须为 `cppdbg`。
+
+### sourceFileMap
+
+这允许将源代码的编译时路径映射到本地源代码位置。它是键/值对的对象，将解析第一个字符串匹配的路径。（例如：`"sourceFileMap": { "/mnt/c": "c:\\" }` 将映射调试器返回的任何以 `/mnt/c` 开头的路径并将其转换为 `c:\\`。你可以在对象中有多个映射，但它们将按提供的顺序处理。）
