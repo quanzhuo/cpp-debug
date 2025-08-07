@@ -28,10 +28,6 @@ const downloadAndExtract = async (file) => {
 
     await tar.x({ file: filePath });
     unlinkSync(filePath);
-
-    const targetPlatform = file.slice(0, -4);
-    execSync(`vsce package --target ${targetPlatform}`, { stdio: 'inherit' });
-    execSync(`rm -rf debugAdapter`, { stdio: 'inherit' });
 };
 
 const main = async () => {
@@ -39,6 +35,13 @@ const main = async () => {
     for (const file of debugAdapterZips) {
         try {
             await downloadAndExtract(file);
+            if (file === 'darwin-x64.tar') {
+                await downloadAndExtract('lldb.tar');
+                execSync(`mv lldb/lldb-mi debugAdapter; rm -rf lldb lldb.tar`, { stdio: 'inherit' });
+            }
+            const targetPlatform = file.slice(0, -4);
+            execSync(`vsce package --target ${targetPlatform}`, { stdio: 'inherit' });
+            execSync(`rm -rf debugAdapter`, { stdio: 'inherit' });
         } catch (error) {
             console.error(`Error processing ${file}:`, error);
         }
