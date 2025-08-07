@@ -10,6 +10,17 @@
     "Debuggers",
     "Other"
   ],
+  "keywords": [
+    "C",
+    "C++",
+    "KylinIdeDev",
+    "KylinIdeDevDebug",
+    "KylinIdeDevCYuYan",
+    "KylinIdeDevCPlusPlus",
+    "gdb",
+    "debug",
+    "MIEngine"
+  ],
   "activationEvents": [
     "onLanguage:c",
     "onLanguage:cpp",
@@ -17,6 +28,7 @@
     "onCommand:extension.pickNativeProcess",
     "onCommand:extension.pickRemoteNativeProcess"
   ],
+  "downloadUrl": "https://gitee.com/openkylin/extensions-repo/tree/master/KylinIDETeam/cppdebug",
   "author": {
     "name": "quanzhuo",
     "email": "quanzhuo@kylinos.cn"
