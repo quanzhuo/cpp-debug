@@ -1,6 +1,6 @@
 {
-  "name": "debug",
-  "displayName": "debug",
+  "name": "cppdebug",
+  "displayName": "Cpp Debug (gdb/lldb)",
   "description": "",
   "version": "0.0.1",
   "engines": {
