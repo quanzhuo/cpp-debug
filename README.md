@@ -6,6 +6,7 @@ This extension integrates [MIEngine](https://github.com/microsoft/MIEngine), sup
 
 * Although MIEngine support lldb, this extension mainly support gdb, so we test little on lldb
 * Since this extension use the same debug adaptor(MIEngine) as ms-vscode.cpptools, the same type attribute "cppdbg" is set as ms-vscode.cpptools. The launch.json file using for ms-vscode.cpptools might use for this extension directly
+* This extension support linux-x64 and linux-arm64 only
 
 ## Requirements
 
@@ -207,6 +208,46 @@ If you want to debug a Windows dump file, set this to the path to the dump file 
 Full path to a core dump file to debug for the specified program. Set this to the path to the core dump file to start debugging in the `launch` configuration.
 _Note: core dump debugging is not supported with MinGw._
 
+### miDebuggerServerAddress
+
+Network address of the debugger server (for example, gdbserver) to connect to for remote debugging (example: localhost:1234).
+
+### debugServerPath
+
+Full path to debug server to launch.
+
+### debugServerArgs
+
+Arguments for the debugger server.
+
+### serverStarted
+
+Server-started pattern to look for in the debug server output. Regular expressions are supported.
+
+### filterStdout
+
+If set to true, search stdout stream for server-started pattern and log stdout to debug output. Default value is true.
+
+### filterStderr
+
+If set to true, search stderr stream for server-started pattern and log stderr to debug output. Default value is false.
+
+### serverLaunchTimeout
+
+Time in milliseconds, for the debugger to wait for the debugServer to start up. Default is 10000.
+
+### pipeTransport
+
+For information about attaching to a remote process, such as debugging a process in a Docker container, see the Pipe transport settings article.
+
+### hardwareBreakpoints
+
+If provided, this explicitly controls hardware breakpoint behavior for remote targets. If require is set to true, always use hardware breakpoints. Default value is false. limit is an optional limit on the number of available hardware breakpoints to use which is only enforced when require is true and limit is greater than 0. Defaults value is 0. Example: "hardwareBreakpoints": { require: true, limit: 6 }.
+
+### processId
+
+Defaults to ${command:pickProcess} which will display a list of available processes the debugger can attach to. We recommend that you leave this default, but the property can be explicitly set to a specific process ID for the debugger to attach to.
+
 ### request
 
 Indicates whether the configuration section is intended to `launch` the program or `attach` to an already running instance.
@@ -230,7 +271,8 @@ This allows mapping of the compile-time paths for source to local source locatio
 此扩展集成了 [MIEngine](https://github.com/microsoft/MIEngine)，支持使用 gdb 调试 C/C++ 程序。
 
 * 尽管 MIEngine 支持 lldb，但此扩展主要支持 gdb，因此我们对 lldb 的测试较少
-* 由于此扩展使用与 ms-vscode.cpptools 相同的调试适配器（MIEngine），因此设置了与 ms-vscode.cpptools 相同的类型属性 "cppdbg"。用于 ms-vscode.cpptools 的 launch.json 文件可能直接用于此扩展
+* 由于此扩展使用与 ms-vscode.cpptools 相同的调试适配器（MIEngine），因此设置了与 ms-vscode.cpptools 相同的类型属性 "cppdbg"。用于 ms-vscode.cpptools 的 launch.json 文件大概率可以直接用于此扩展
+* 该插件仅支持 linux-x64 平台和 linux-arm64 平台
 
 ## 要求
 
@@ -431,6 +473,46 @@ This allows mapping of the compile-time paths for source to local source locatio
 
 要调试的指定程序的核心转储文件的完整路径。将其设置为核心转储文件的路径，以在 `launch` 配置中开始调试。
 _注意：MinGw 不支持核心转储调试。_
+
+### miDebuggerServerAddress
+
+调试服务器（例如，gdbserver）的网络地址，用于连接进行远程调试（例如：localhost:1234）。
+
+### debugServerPath
+
+要启动的调试服务器的完整路径。
+
+### debugServerArgs
+
+调试服务器的参数。
+
+### serverStarted
+
+在调试服务器输出中查找的服务器启动模式。支持正则表达式。
+
+### filterStdout
+
+如果设置为 true，则在 stdout 流中搜索服务器启动模式，并将 stdout 记录到调试输出。默认值为 true。
+
+### filterStderr
+
+如果设置为 true，则在 stderr 流中搜索服务器启动模式，并将 stderr 记录到调试输出。默认值为 false。
+
+### serverLaunchTimeout
+
+调试器等待 debugServer 启动的时间（以毫秒为单位）。默认值为 10000。
+
+### pipeTransport
+
+有关附加到远程进程的信息，例如调试 Docker 容器中的进程，请参阅管道传输设置文章。
+
+### hardwareBreakpoints
+
+如果提供，这将明确控制远程目标的硬件断点行为。如果 require 设置为 true，则始终使用硬件断点。默认值为 false。limit 是对可用硬件断点数量的可选限制，仅在 require 设置为 true 且 limit 大于 0 时强制执行。默认值为 0。示例："hardwareBreakpoints": { require: true, limit: 6 }。
+
+### processId
+
+默认为 ${command:pickProcess}，这将显示调试器可以附加到的可用进程列表。我们建议你保留此默认值，但可以将该属性显式设置为调试器要附加到的特定进程 ID。
 
 ### request
 
