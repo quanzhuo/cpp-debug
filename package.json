@@ -1797,21 +1797,7 @@
             "program": "${workspaceFolder}/a.out",
             "args": [],
             "stopAtEntry": true,
-            "cwd": "${workspaceFolder}",
-            "environment": [
-              {
-                "name": "PATH",
-                "value": "${env:PATH}"
-              }
-            ],
-            "externalConsole": true
-          },
-          {
-            "name": "C++ Attach to Process",
-            "type": "cppdbg",
-            "request": "attach",
-            "program": "${workspaceFolder}/a.out",
-            "processId": 0
+            "cwd": "${workspaceFolder}"
           }
         ],
         "configurationSnippets": [

@@ -4,26 +4,26 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "debug" is now active!');
 
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('cppdbg', new CppDbgConfigurationProvider()));
-	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('cppdbg', {
-		// triggerKind: vscode.DebugConfigurationProviderTriggerKind.Dynamic
-		//
-		// With the trigger kind Dynamic the provideDebugConfigurations method is used to dynamically determine debug configurations to be presented to the user (in addition to the static configurations from the launch.json).
-		// 当用户在运行和调试视图中点击下拉列表，并选择 'C++ (GDB/LLDB)...' 时，会调用这个方法提供调试配置
-		provideDebugConfigurations(folder: vscode.WorkspaceFolder | undefined, token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration[]> {
-			return [
-				{
-					name: "Launch Program",
-					type: "cppdbg",
-					request: "launch",
-					program: "${file}",
-					stopAtEntry: true,
-					args: [],
-					cwd: ".",
-					preLaunchTask: "build"
-				}
-			];
-		}
-	}, vscode.DebugConfigurationProviderTriggerKind.Dynamic));
+	// context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('cppdbg', {
+	// 	// triggerKind: vscode.DebugConfigurationProviderTriggerKind.Dynamic
+	// 	//
+	// 	// With the trigger kind Dynamic the provideDebugConfigurations method is used to dynamically determine debug configurations to be presented to the user (in addition to the static configurations from the launch.json).
+	// 	// 当用户在运行和调试视图中点击下拉列表，并选择 'C++ (GDB/LLDB)...' 时，会调用这个方法提供调试配置
+	// 	provideDebugConfigurations(folder: vscode.WorkspaceFolder | undefined, token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration[]> {
+	// 		return [
+	// 			{
+	// 				name: "Launch Program",
+	// 				type: "cppdbg",
+	// 				request: "launch",
+	// 				program: "${file}",
+	// 				stopAtEntry: true,
+	// 				args: [],
+	// 				cwd: ".",
+	// 				preLaunchTask: "build"
+	// 			}
+	// 		];
+	// 	}
+	// }, vscode.DebugConfigurationProviderTriggerKind.Dynamic));
 
 
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('cppdbg', {
