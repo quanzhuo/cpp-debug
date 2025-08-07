@@ -1,10 +1,10 @@
 # Cpp Debug README
 
-This extension integrates [MIEngine](https://github.com/microsoft/MIEngine), support debugging of C/C++ programs using gdb/lldb.
+This extension integrates [MIEngine](https://github.com/microsoft/MIEngine), support debugging of C/C++ programs using gdb.
 
 ## Requirements
 
-You need to install gdb/lldb on your computer.
+You need to install gdb on your computer.
 
 ## Configure C/C++ debugging
 
