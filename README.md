@@ -216,6 +216,31 @@ _Note: core dump debugging is not supported with MinGw._
 
 Network address of the debugger server (for example, gdbserver) to connect to for remote debugging (example: localhost:1234).
 
+**Example Configuration**
+
+```json
+{
+     "name": "gdb remote debug",
+     "type": "cppdbg",
+     "request": "launch",
+     "program": "${workspaceFolder}/a.out",
+     "args": [],
+     "stopAtEntry": true,
+     "cwd": "${workspaceFolder}",
+     "environment": [],
+     "externalConsole": false,
+     "miDebuggerServerAddress": "localhost:1234",
+     "MIMode": "gdb",
+     "setupCommands": [
+         {
+             "description": "为 gdb 启用整齐打印",
+             "text": "-enable-pretty-printing",
+             "ignoreFailures": true
+         }
+     ]
+}
+```
+
 ### debugServerPath
 
 Full path to debug server to launch.
@@ -485,6 +510,31 @@ _注意：MinGw 不支持核心转储调试。_
 ### miDebuggerServerAddress
 
 调试服务器（例如，gdbserver）的网络地址，用于连接进行远程调试（例如：localhost:1234）。
+
+**例如**
+
+```json
+{
+     "name": "gdb remote debug",
+     "type": "cppdbg",
+     "request": "launch",
+     "program": "${workspaceFolder}/a.out",
+     "args": [],
+     "stopAtEntry": true,
+     "cwd": "${workspaceFolder}",
+     "environment": [],
+     "externalConsole": false,
+     "miDebuggerServerAddress": "localhost:1234",
+     "MIMode": "gdb",
+     "setupCommands": [
+         {
+             "description": "为 gdb 启用整齐打印",
+             "text": "-enable-pretty-printing",
+             "ignoreFailures": true
+         }
+     ]
+}
+```
 
 ### debugServerPath
 
