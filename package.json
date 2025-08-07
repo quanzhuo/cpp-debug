@@ -20,6 +20,7 @@
     "url": "https://gitee.com/quanzhuo/debug"
   },
   "publisher": "KylinIdeTeam",
+  "icon": "images/icon.png",
   "main": "./out/extension.js",
   "contributes": {
     "debuggers": [
