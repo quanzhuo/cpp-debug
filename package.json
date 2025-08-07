@@ -13,7 +13,9 @@
   "activationEvents": [
     "onLanguage:c",
     "onLanguage:cpp",
-    "onDebugResolve:cppdbg"
+    "onDebugResolve:cppdbg",
+    "onCommand:extension.pickNativeProcess",
+    "onCommand:extension.pickRemoteNativeProcess"
   ],
   "repository": {
     "type": "git",
@@ -42,6 +44,10 @@
         },
         "osx": {
           "program": "./debugAdapter/OpenDebugAD7"
+        },
+        "variables": {
+          "pickProcess": "extension.pickNativeProcess",
+          "pickRemoteProcess": "extension.pickRemoteNativeProcess"
         },
         "configurationAttributes": {
           "launch": {
@@ -1067,7 +1073,7 @@
                   {
                     "type": "string",
                     "description": "%c_cpp.debuggers.processId.anyOf.description%",
-                    "default": ""
+                    "default": "${command:pickProcess}"
                   },
                   {
                     "type": "integer",
