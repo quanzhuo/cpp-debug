@@ -149,7 +149,7 @@ The path to the debugger (such as gdb). When only the executable is specified, i
 
 ### miDebuggerArgs
 
-Additional arguments to pass to the debugger (such as gdb).
+Additional arguments to pass to the debugger (such as gdb). For example: specify the code path `"miDebuggerArgs": "--directory=${workspaceRoot}/xxx"`.
 
 ### stopAtEntry
 
@@ -419,7 +419,7 @@ This allows mapping of the compile-time paths for source to local source locatio
 
 ### miDebuggerArgs
 
-传递给调试器（如 gdb）的附加参数。
+传递给调试器（如 gdb）的附加参数。例如：指定代码路径 `"miDebuggerArgs": "--directory=${workspaceRoot}/xxx"`
 
 ### stopAtEntry
 
