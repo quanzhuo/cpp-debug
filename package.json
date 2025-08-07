@@ -1,8 +1,8 @@
 {
   "name": "cppdebug",
-  "displayName": "C/C+++ Debug (gdb)",
+  "displayName": "C/C++ Debug (gdb)",
   "description": "",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.68.0"
   },

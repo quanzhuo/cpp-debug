@@ -1,9 +1,5 @@
 # Change Log
 
-All notable changes to the "debug" extension will be documented in this file.
+## [v0.0.4] - 2024-10-14
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
-## [Unreleased]
-
-- Initial release
+- 集成 MIEngine， 发布版本 v0.0.4
