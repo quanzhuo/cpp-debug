@@ -1,5 +1,9 @@
 # Change Log
 
+## [v0.0.8] - 2024-10-23
+
+- package.json 中添加 Kylin-IDE 支持的特有字段
+
 ## [v0.0.7] - 2024-10-22
 
 - 更新 README
