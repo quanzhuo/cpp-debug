@@ -1833,14 +1833,26 @@
             }
           },
           {
-            "label": "C/C++ Debug (Attach)",
+            "label": "C/C++ Debug (gdb Attach)",
             "description": "Attach to a running C/C++ program",
             "body": {
-              "name": "Attach to Process",
+              "name": "C/C++ Debug (gdb Attach)",
               "type": "cppdbg",
               "request": "attach",
-              "program": "${workspaceFolder}/a.out",
-              "processId": 0
+              "program": "enter program name, for example ${workspaceFolder}/a.out",
+              "MIMode": "gdb",
+              "setupCommands": [
+                {
+                  "description": "Enable pretty-printing for gdb",
+                  "text": "-enable-pretty-printing",
+                  "ignoreFailures": true
+                },
+                {
+                  "description": "Set Disassembly Flavor to Intel",
+                  "text": "-gdb-set disassembly-flavor intel",
+                  "ignoreFailures": true
+                }
+              ]
             }
           }
         ]
