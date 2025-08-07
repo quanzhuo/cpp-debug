@@ -105,11 +105,11 @@ SPDX-License-Identifier: MIT
     </Type>
 
     <Type Name ="QVector3D">
-        <DisplayString>{{ x = {xp}, y = {yp}, z = {zp} }}</DisplayString>
+        <DisplayString>{{ x = {v[0]}, y = {v[1]}, z = {v[2]} }}</DisplayString>
         <Expand>
-            <Item Name="[x]">xp</Item>
-            <Item Name="[y]">yp</Item>
-            <Item Name="[z]">zp</Item>
+            <Item Name="[x]">v[0]</Item>
+            <Item Name="[y]">v[1]</Item>
+            <Item Name="[z]">v[2]</Item>
         </Expand>
     </Type>
 
