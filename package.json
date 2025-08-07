@@ -17,9 +17,17 @@
     "onCommand:extension.pickNativeProcess",
     "onCommand:extension.pickRemoteNativeProcess"
   ],
+  "author": {
+    "name": "quanzhuo",
+    "email": "quanzhuo@kylinos.cn"
+  },
   "repository": {
     "type": "git",
     "url": "https://gitee.com/quanzhuo/cpp-debug"
+  },
+  "bugs": {
+    "url": "https://gitee.com/quanzhuo/cpp-debug/issues",
+    "email": "quanzhuo@kylinos.cn"
   },
   "publisher": "KylinIdeTeam",
   "icon": "images/icon.png",
