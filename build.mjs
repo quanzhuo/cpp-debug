@@ -7,8 +7,6 @@ import fetch from 'node-fetch';
 import * as tar from 'tar';
 
 const debugAdapterZips = [
-    'win32-x64.tar',
-    'darwin-x64.tar',
     'linux-x64.tar',
     'linux-arm64.tar',
 ];
