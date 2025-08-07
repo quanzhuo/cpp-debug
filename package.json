@@ -1797,7 +1797,14 @@
             "program": "${workspaceFolder}/a.out",
             "args": [],
             "stopAtEntry": true,
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "setupCommands": [
+              {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+              }
+            ]
           }
         ],
         "configurationSnippets": [
