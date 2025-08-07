@@ -6,7 +6,7 @@ SPDX-License-Identifier: MIT
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
     <Type Name="QUuid">
-        <DisplayString>{{{data1,Xb}-{data2,Xb}-{data3,Xb}-{(data4[0]),nvoXb}{(data4[1]),nvoXb}-{(data4[2]),nvoXb}{(data4[3]),nvoXb}{(data4[4]),nvoXb}{(data4[5]),nvoXb}{(data4[6]),nvoXb}{(data4[7]),nvoXb}}}</DisplayString>
+        <DisplayString>{{{data1,Xb}-{data2,Xb}-{data3,Xb}-{(data4[0]),Xb}{(data4[1]),Xb}-{(data4[2]),Xb}{(data4[3]),Xb}{(data4[4]),Xb}{(data4[5]),Xb}{(data4[6]),Xb}{(data4[7]),Xb}}}</DisplayString>
     </Type>
 
   <Type Name="QPoint">
