@@ -2,7 +2,7 @@
   "name": "cppdebug",
   "displayName": "C/C++ Debug (gdb)",
   "description": "Integrates MIEngine, the same DA used by Microsoft's C/C++ extension, to support debugging C/C++ programs using gdb.",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "engines": {
     "vscode": "^1.68.0"
   },
