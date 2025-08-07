@@ -1826,9 +1826,9 @@
         "configurationSnippets": [
           {
             "label": "C/C++ Debug (gdb Launch)",
-            "description": "Launch a C++ program",
+            "description": "Launch a C/C++ program",
             "body": {
-              "name": "C/C++ Debug (Launch)",
+              "name": "C/C++ Debug (gdb Launch)",
               "type": "cppdbg",
               "request": "launch",
               "program": "enter program name, for example: ${workspaceFolder}/a.out",
