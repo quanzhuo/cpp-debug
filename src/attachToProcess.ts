@@ -1,28 +1,24 @@
-// import { CppSettings } from '../LanguageServer/settings';
 import { AttachItem, showQuickPick } from './attachQuickPick';
 import { PsProcessParser } from './nativeAttach';
 
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-// import * as nls from 'vscode-nls';
-// import * as util from '../common';
-import * as debugUtils from './utils';
 import localize from './localize';
-
-// nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
-// const localize: nls.LocalizeFunc = nls.loadMessageBundle();
+import * as debugUtils from './utils';
 
 export interface AttachItemsProvider {
     getAttachItems(token?: vscode.CancellationToken): Promise<AttachItem[]>;
 }
 
 export class AttachPicker {
-    constructor(private attachItemsProvider: AttachItemsProvider) { }
+    constructor(private attachItemsProvider: AttachItemsProvider,
+        private context: vscode.ExtensionContext,
+    ) { }
 
     // We should not await on this function.
     public async ShowAttachEntries(token?: vscode.CancellationToken): Promise<string | undefined> {
-        return showQuickPick(() => this.attachItemsProvider.getAttachItems(token));
+        return showQuickPick(() => this.attachItemsProvider.getAttachItems(token), this.context);
     }
 }
 
@@ -109,13 +105,6 @@ export class RemoteAttachPicker {
         let parameterEnd: string = `)`;
         let escapedQuote: string = `\\\"`;
         let shPrefix: string = ``;
-
-        // const settings: CppSettings = new CppSettings();
-        // if (settings.useBacktickCommandSubstitution) {
-        //     parameterBegin = `\``;
-        //     parameterEnd = `\``;
-        //     escapedQuote = `\"`;
-        // }
 
         // Must use single quotes around the whole command and double quotes for the argument to `sh -c` because Linux evaluates $() inside of double quotes.
         // Having double quotes for the outerQuote will have $(uname) replaced before it is sent to the remote machine.

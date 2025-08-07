@@ -2,15 +2,10 @@
 import * as child_process from 'child_process';
 import * as os from 'os';
 import * as vscode from 'vscode';
-// import * as nls from 'vscode-nls';
-// import { findPowerShell } from '../common';
 import { AttachItem } from './attachQuickPick';
 import { AttachItemsProvider } from './attachToProcess';
-import { findPowerShell } from './utils';
 import localize from './localize';
-
-// nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
-// const localize: nls.LocalizeFunc = nls.loadMessageBundle();
+import { findPowerShell } from './utils';
 
 export class Process {
     constructor(public name: string, public pid?: string, public commandLine?: string) { }
