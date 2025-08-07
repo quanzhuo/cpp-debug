@@ -1831,10 +1831,10 @@
               "name": "C/C++ Debug (gdb Launch)",
               "type": "cppdbg",
               "request": "launch",
-              "program": "enter program name, for example: \\${workspaceRoot}/a.out",
+              "program": "enter program name, for example: ^\"\\${workspaceRoot}/a.out\"",
               "args": [],
               "stopAtEntry": true,
-              "cwd": "\"\\${workspaceRoot}\"",
+              "cwd": "^\"\\${workspaceRoot}\"",
               "environment": [],
               "MIMode": "gdb",
               "setupCommands": [
