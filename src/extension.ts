@@ -1,7 +1,10 @@
 import * as vscode from 'vscode';
+import { initialize } from './extension_';
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "debug" is now active!');
+
+	initialize(context);
 
 	// context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('cppdbg', new CppDbgConfigurationProvider()));
 	// context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('cppdbg', {
