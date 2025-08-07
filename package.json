@@ -1854,7 +1854,7 @@
               "type": "cppdbg",
               "request": "attach",
               "program": "^\"enter program name, for example: \\${workspaceFolder}/a.out\"",
-              "processId": "^\"\\${command:extension.pickNativeProcess}\"",
+              "processId": "^\"\\${command:pickProcess}\"",
               "MIMode": "gdb",
               "setupCommands": [
                 {

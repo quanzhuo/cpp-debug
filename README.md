@@ -12,6 +12,10 @@ This extension integrates [MIEngine](https://github.com/microsoft/MIEngine), sup
 
 You need to install gdb on your computer.
 
+## Feedback
+
+Please provide feedback by filing an issue on [Gitee](https://gitee.com/quanzhuo/cpp-debug/issues)
+
 ## Configure C/C++ debugging
 
 A `launch.json` file is used to configure the debugger. To get started with debugging you need to fill in the `program` field with the path to the executable you plan to debug.
@@ -277,6 +281,10 @@ This allows mapping of the compile-time paths for source to local source locatio
 ## 要求
 
 你需要在电脑上安装 gdb。
+
+## 反馈
+
+请通过在 [Gitee](https://gitee.com/quanzhuo/cpp-debug/issues) 上提交问题来提供反馈
 
 ## 配置 C/C++ 调试
 
