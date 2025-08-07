@@ -268,10 +268,10 @@ This allows mapping of the compile-time paths for source to local source locatio
 
 [Readme in English](#cpp-debug-readme)
 
-此扩展集成了 [MIEngine](https://github.com/microsoft/MIEngine)，支持使用 gdb 调试 C/C++ 程序。
+此插件集成了 [MIEngine](https://github.com/microsoft/MIEngine)，支持使用 gdb 调试 C/C++ 程序。
 
-* 尽管 MIEngine 支持 lldb，但此扩展主要支持 gdb，因此我们对 lldb 的测试较少
-* 由于此扩展使用与 ms-vscode.cpptools 相同的调试适配器（MIEngine），因此设置了与 ms-vscode.cpptools 相同的类型属性 "cppdbg"。用于 ms-vscode.cpptools 的 launch.json 文件大概率可以直接用于此扩展
+* 尽管 MIEngine 支持 lldb，但此插件主要支持 gdb，因此我们对 lldb 的测试较少
+* 由于此插件使用与 ms-vscode.cpptools 相同的调试适配器（MIEngine），因此设置了与 ms-vscode.cpptools 相同的类型属性 "cppdbg"。用于 ms-vscode.cpptools 的 launch.json 文件大概率可以直接用于此插件
 * 该插件仅支持 linux-x64 平台和 linux-arm64 平台
 
 ## 要求
@@ -335,7 +335,7 @@ This allows mapping of the compile-time paths for source to local source locatio
 
 ### avoidWindowsConsoleRedirection
 
-为了支持在 Windows 上使用集成终端，扩展会向被调试程序的参数添加控制台重定向命令，以便在集成终端中显示控制台输入和输出。将此选项设置为 `true` 将禁用它。
+为了支持在 Windows 上使用集成终端，插件会向被调试程序的参数添加控制台重定向命令，以便在集成终端中显示控制台输入和输出。将此选项设置为 `true` 将禁用它。
 
 ### logging
 
