@@ -1798,6 +1798,8 @@
             "args": [],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
+            "environment": [],
+            "MIMode": "gdb",
             "setupCommands": [
               {
                 "description": "Enable pretty-printing for gdb",
