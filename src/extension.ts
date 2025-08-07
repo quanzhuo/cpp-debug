@@ -8,9 +8,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const attachItemsProvider: AttachItemsProvider = NativeAttachItemsProviderFactory.Get();
 	const attacher: AttachPicker = new AttachPicker(attachItemsProvider, context);
-	context.subscriptions.push(vscode.commands.registerCommand('extension.pickNativeProcess', () => attacher.ShowAttachEntries()));
+	context.subscriptions.push(vscode.commands.registerCommand('cppdebug.pickNativeProcess', () => attacher.ShowAttachEntries()));
 	const remoteAttacher: RemoteAttachPicker = new RemoteAttachPicker();
-	context.subscriptions.push(vscode.commands.registerCommand('extension.pickRemoteNativeProcess', (any) => remoteAttacher.ShowAttachEntries(any)));
+	context.subscriptions.push(vscode.commands.registerCommand('cppdebug.pickRemoteNativeProcess', (any) => remoteAttacher.ShowAttachEntries(any)));
 
 	copyNatvisFilesToUserCache(context);
 }
