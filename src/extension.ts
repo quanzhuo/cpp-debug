@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "debug" is now active!');
 
-	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('cppdbg', new CppDbgConfigurationProvider()));
+	// context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('cppdbg', new CppDbgConfigurationProvider()));
 	// context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('cppdbg', {
 	// 	// triggerKind: vscode.DebugConfigurationProviderTriggerKind.Dynamic
 	// 	//
@@ -26,27 +26,27 @@ export function activate(context: vscode.ExtensionContext) {
 	// }, vscode.DebugConfigurationProviderTriggerKind.Dynamic));
 
 
-	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('cppdbg', {
-		// triggerKind: vscode.DebugConfigurationProviderTriggerKind.Initial
-		//
-		// With the value Initial (or if no trigger kind argument is given) the provideDebugConfigurations method is used to provide the initial debug configurations to be copied into a newly created launch.json
-		// 也就是说，当工作区中不存在 launch.json 文件时，在运行和调试视图中点击 '创建 launch.json 文件' 按钮时，会调用这个方法提供调试配置并复制到 launch.json 文件中，同时 设置于 package.json 中的 initialConfigurations 也会被复制到 launch.json 文件中
-		// 如果已经存在了 launch.json 文件，点击 '创建 launch.json 文件' 按钮时，不会调用这个方法，没有任何效果
-		provideDebugConfigurations(folder: vscode.WorkspaceFolder | undefined, token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration[]> {
-			return [
-				{
-					name: "Launch Program",
-					type: "cppdbg",
-					request: "launch",
-					program: "${file}",
-					stopAtEntry: true,
-					args: [],
-					cwd: ".",
-					preLaunchTask: "build"
-				}
-			];
-		}
-	}, vscode.DebugConfigurationProviderTriggerKind.Initial));
+	// context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('cppdbg', {
+	// 	// triggerKind: vscode.DebugConfigurationProviderTriggerKind.Initial
+	// 	//
+	// 	// With the value Initial (or if no trigger kind argument is given) the provideDebugConfigurations method is used to provide the initial debug configurations to be copied into a newly created launch.json
+	// 	// 也就是说，当工作区中不存在 launch.json 文件时，在运行和调试视图中点击 '创建 launch.json 文件' 按钮时，会调用这个方法提供调试配置并复制到 launch.json 文件中，同时 设置于 package.json 中的 initialConfigurations 也会被复制到 launch.json 文件中
+	// 	// 如果已经存在了 launch.json 文件，点击 '创建 launch.json 文件' 按钮时，不会调用这个方法，没有任何效果
+	// 	provideDebugConfigurations(folder: vscode.WorkspaceFolder | undefined, token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration[]> {
+	// 		return [
+	// 			{
+	// 				name: "Launch Program",
+	// 				type: "cppdbg",
+	// 				request: "launch",
+	// 				program: "${file}",
+	// 				stopAtEntry: true,
+	// 				args: [],
+	// 				cwd: ".",
+	// 				preLaunchTask: "build"
+	// 			}
+	// 		];
+	// 	}
+	// }, vscode.DebugConfigurationProviderTriggerKind.Initial));
 }
 
 class CppDbgConfigurationProvider implements vscode.DebugConfigurationProvider {
