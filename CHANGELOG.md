@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.1.0
+
+- 修复注册命令和 ms-vscode.cpptools 冲突的问题：https://gitee.com/quanzhuo/cpp-debug/issues/ICQN93
+
 ## v0.0.9
 
 - 内置 qt5.natvis 文件
