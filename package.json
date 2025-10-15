@@ -3,6 +3,7 @@
   "displayName": "C/C++ Debug (gdb)",
   "description": "C/C++ Debugger extension using MIEngine",
   "version": "0.1.0",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.68.0"
   },
