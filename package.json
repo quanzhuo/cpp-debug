@@ -1,6 +1,6 @@
 {
   "name": "cppdebug",
-  "displayName": "C/C++ Debug (gdb)",
+  "displayName": "C/C++ Debug",
   "description": "C/C++ Debugger extension using MIEngine",
   "version": "0.2.0",
   "license": "MIT",
@@ -36,10 +36,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://gitee.com/quanzhuo/cpp-debug"
+    "url": "https://github.com/quanzhuo/cpp-debug"
   },
   "bugs": {
-    "url": "https://gitee.com/quanzhuo/cpp-debug/issues",
+    "url": "https://github.com/quanzhuo/cpp-debug/issues",
     "email": "quanzhuo@kylinos.cn"
   },
   "publisher": "KylinIdeTeam",

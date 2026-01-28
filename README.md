@@ -1,8 +1,10 @@
-# Cpp Debug README
+# Cpp Debug
 
-This extension integrates [MIEngine](https://github.com/microsoft/MIEngine) to support debugging of C/C++ programs using gdb.
+A Visual Studio Code extension for debugging C/C++ applications with GDB or LLDB.
 
-Since this extension uses the same debug adapter (MIEngine) as `ms-vscode.cpptools`, it also uses the same type attribute `"cppdbg"`. Therefore, a `launch.json` configuration designed for `ms-vscode.cpptools` can be used directly with this extension.
+## Overview
+
+This extension uses **MIEngine** as its debug adapter. As a result, it is compatible with the launch configurations used by Microsoft's C/C++ extension: existing `launch.json` settings (for example, `type: "cppdbg"` with `MIMode`) can be reused directly with this extension.
 
 ## Requirements
 
@@ -10,7 +12,7 @@ You should have `gdb` installed.
 
 ## Feedback
 
-Please provide feedback by filing an issue on [Gitee](https://gitee.com/quanzhuo/cpp-debug/issues)
+Please provide feedback by filing an issue on [Github](https://github.com/quanzhuo/cpp-debug/issues)
 
 ## Configure C/C++ debugging
 
