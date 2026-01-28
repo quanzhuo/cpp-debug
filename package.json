@@ -2,7 +2,7 @@
   "name": "cppdebug",
   "displayName": "C/C++ Debug (gdb)",
   "description": "C/C++ Debugger extension using MIEngine",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "engines": {
     "vscode": "^1.68.0"
@@ -1908,7 +1908,7 @@
     "watch": "npm-run-all -p watch:*",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "vscode:prepublish": "npm run package",
+    "vscode:prepublish": "node build-MIEngine.mjs && npm run package",
     "package": "npm run check-types && node esbuild.js --production"
   },
   "devDependencies": {

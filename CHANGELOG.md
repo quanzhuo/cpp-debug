@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.2.0
+
+- update MIEngine to latest version
+
+
 ## v0.1.0
 
 - 修复注册命令和 ms-vscode.cpptools 冲突的问题：https://gitee.com/quanzhuo/cpp-debug/issues/ICQN93
