@@ -1,6 +1,5 @@
 import * as cp from 'child_process';
 import * as fs from 'fs';
-import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import localize from './localize';
@@ -318,35 +317,9 @@ export class ParsedEnvironmentFile {
         // Convert env map back to array.
         const arrayEnv: Environment[] = [];
         for (const key of env.keys()) {
-            arrayEnv.push({name: key, value: env.get(key)});
+            arrayEnv.push({ name: key, value: env.get(key) });
         }
 
         return new ParsedEnvironmentFile(arrayEnv, warning);
-    }
-}
-
-/**
- * 将插件内置的 natvis 文件复制到用户主目录下的 .visualizers 目录
- */
-export function copyNatvisFilesToUserCache(context: vscode.ExtensionContext) {
-    const homeDir = os.homedir();
-    const targetDir = path.join(homeDir, '.visualizers');
-    if (!fs.existsSync(targetDir)) {
-        fs.mkdirSync(targetDir, { recursive: true});
-    }
-
-    const natvisSourceDir = path.join(context.extensionPath, 'visualizers');
-    const files = fs.readdirSync(natvisSourceDir);
-    for (const file of files) {
-        if (file.endsWith('.natvis')) {
-            try {
-                fs.copyFileSync(
-                    path.join(natvisSourceDir, file),
-                    path.join(targetDir, file)
-                );
-            } catch (error) {
-                console.error(`Failed to copy file ${file}:`, error);
-            }
-        }
     }
 }

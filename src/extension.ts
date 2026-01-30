@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import { AttachItemsProvider, AttachPicker, RemoteAttachPicker } from './attachToProcess';
-import { NativeAttachItemsProviderFactory } from './nativeAttach';
-import { copyNatvisFilesToUserCache } from './utils';
 import { CppDebugConfigurationProvider } from './configurationProvider';
+import { NativeAttachItemsProviderFactory } from './nativeAttach';
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension Cpp Debug is now active!');
@@ -18,8 +17,6 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.debug.registerDebugConfigurationProvider('cppdbg', configProvider)
 	);
-
-	copyNatvisFilesToUserCache(context);
 }
 
 export function deactivate() { }
