@@ -3,3 +3,4 @@ debugAdapter/
 out/
 *.vsix
 dist/
+gdb-pretty-printers/
