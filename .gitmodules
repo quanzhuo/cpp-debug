@@ -1,3 +1,6 @@
 [submodule "submodules/MIEngine"]
 	path = submodules/MIEngine
 	url = https://github.com/quanzhuo/MIEngine.git
+[submodule "submodules/gdb-pretty-printers"]
+	path = submodules/gdb-pretty-printers
+	url = https://github.com/quanzhuo/gdb-pretty-printers.git
