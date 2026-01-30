@@ -1900,7 +1900,17 @@
       {
         "language": "rust"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "C/C++ Debug",
+      "properties": {
+        "cppdebug.autoLoadPrettyPrinters": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cppdebug.autoLoadPrettyPrinters.description%"
+        }
+      }
+    }
   },
   "scripts": {
     "compile": "npm run check-types && node esbuild.js",

@@ -141,5 +141,6 @@
     "failed.processList.spawn": "Failed to spawn '{0}'.",
     "process.exited": "Process exited with code {0}",
     "process.succeeded": "Process executed successfully.",
-    "ignoring.lines.in.envfile": "Ignoring non-parsable lines in {0} {1}: "
+    "ignoring.lines.in.envfile": "Ignoring non-parsable lines in {0} {1}: ",
+    "cppdebug.autoLoadPrettyPrinters.description": "Automatically load GDB pretty printers when debugging with GDB. This enables better visualization of complex C++ types like Qt containers and STL types."
 }
