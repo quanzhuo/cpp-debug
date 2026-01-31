@@ -10,23 +10,20 @@ async function main() {
     try {
         const src = path.join(__dirname, 'submodules', 'gdb-pretty-printers');
         const dest = path.join(__dirname, 'gdb-pretty-printers');
-        
+
         // Remove destination if it exists to ensure clean state
         fse.removeSync(dest);
-        
+
         console.log(`[build] Copying gdb-pretty-printers to ${dest}...`);
-        fse.copySync(src, dest, {
-            filter: (srcPath) => {
-                const base = path.basename(srcPath);
-                // Exclude .git folder
-                if (base === '.git') return false;
-                // Exclude files ignored by git (from .gitignore)
-                if (base === '__pycache__' || base.endsWith('.pyc') || base === 'gdb.txt' || base === 'autoload.log') {
-                    return false;
+        for (const item of ['printers', 'autoload.py']) {
+            fse.copySync(path.join(src, item), path.join(dest, item), {
+                filter: (srcPath) => {
+                    const base = path.basename(srcPath);
+                    if (base === '__pycache__' || base.endsWith('.pyc')) { return false; }
+                    return true;
                 }
-                return true;
-            }
-        });
+            });
+        }
     } catch (e) {
         console.error('[build] Error copying gdb-pretty-printers:', e);
     }
