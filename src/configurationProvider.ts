@@ -26,43 +26,57 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
             return config;
         }
 
-        // Check if auto-load is enabled
-        const autoLoadEnabled = vscode.workspace.getConfiguration('cppdebug')
-            .get<boolean>('autoLoadPrettyPrinters', true);
-        
-        if (!autoLoadEnabled) {
-            return config;
-        }
-
-        // Only add pretty printer for GDB (not LLDB)
+        // Only process GDB (not LLDB)
         const miMode = config.MIMode || 'gdb';
         if (miMode.toLowerCase() !== 'gdb') {
             return config;
         }
 
-        // Construct the path to autoload.py
-        const autoloadScriptPath = path.join(this.extensionPath, 'gdb-pretty-printers', 'autoload.py');
-
-        // Check if setupCommands already exists
+        // Initialize setupCommands if missing
         if (!config.setupCommands) {
             config.setupCommands = [];
         }
 
-        // Check if the autoload script is already in setupCommands
-        const alreadyHasAutoload = config.setupCommands.some((cmd: any) => 
-            cmd.text && cmd.text.includes('autoload.py')
-        );
+        const cppSettings = vscode.workspace.getConfiguration('cppdebug');
 
-        if (!alreadyHasAutoload) {
-            // Add the autoload command at the beginning of setupCommands
-            // Use forward slashes for cross-platform compatibility (GDB accepts both)
-            const normalizedPath = autoloadScriptPath.replace(/\\/g, '/');
-            
-            config.setupCommands.unshift({
-                description: 'Load GDB Pretty Printers',
-                text: `source ${normalizedPath}`,
-                ignoreFailures: true  // Don't fail if the script has issues
-            });
+        // 1. Handle Enable Pretty Printing
+        const enablePrettyPrinting = cppSettings.get<boolean>('enablePrettyPrinting', true);
+        if (enablePrettyPrinting) {
+            const hasPrettyPrinting = config.setupCommands.some((cmd: any) => 
+                cmd.text && (cmd.text === '-enable-pretty-printing' || cmd.text.includes('-enable-pretty-printing'))
+            );
+
+            if (!hasPrettyPrinting) {
+                config.setupCommands.push({
+                    description: 'Enable pretty-printing for gdb',
+                    text: '-enable-pretty-printing',
+                    ignoreFailures: true
+                });
+            }
+        }
+
+        // 2. Handle Auto Load Pretty Printers Script
+        const autoLoadEnabled = cppSettings.get<boolean>('autoLoadPrettyPrinters', true);
+        if (autoLoadEnabled) {
+            // Construct the path to autoload.py
+            const autoloadScriptPath = path.join(this.extensionPath, 'gdb-pretty-printers', 'autoload.py');
+
+            // Check if the autoload script is already in setupCommands
+            const alreadyHasAutoload = config.setupCommands.some((cmd: any) => 
+                cmd.text && cmd.text.includes('autoload.py')
+            );
+
+            if (!alreadyHasAutoload) {
+                // Add the autoload command at the beginning of setupCommands
+                // Use forward slashes for cross-platform compatibility (GDB accepts both)
+                const normalizedPath = autoloadScriptPath.replace(/\\/g, '/');
+                
+                config.setupCommands.unshift({
+                    description: 'Load GDB Pretty Printers',
+                    text: `source ${normalizedPath}`,
+                    ignoreFailures: true  // Don't fail if the script has issues
+                });
+            }
         }
 
         return config;

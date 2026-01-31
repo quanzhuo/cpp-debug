@@ -142,5 +142,6 @@
     "process.exited": "进程以代码 {0} 退出",
     "process.succeeded": "进程执行成功。",
     "ignoring.lines.in.envfile": "忽略 {0} {1} 中无法解析的行：",
-    "cppdebug.autoLoadPrettyPrinters.description": "使用 GDB 调试时自动加载 GDB pretty printer。这可以更好地可视化复杂的 C++ 类型，如 Qt 容器和 STL 类型。"
+    "cppdebug.autoLoadPrettyPrinters.description": "使用 GDB 调试时自动加载 GDB pretty printer。这可以更好地可视化复杂的 C++ 类型，如 Qt 容器和 STL 类型。",
+    "cppdebug.enablePrettyPrinting.description": "为调试会话启用 GDB 美化打印。"
 }
