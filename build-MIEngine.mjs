@@ -21,14 +21,15 @@ async function build() {
     let originalCsprojContent = null;
     let modified = false;
 
-    // 1.5 Patch MakePIAPortable.csproj for Linux ARM64
-    if (process.platform === 'linux' && process.arch === 'arm64') {
+    // 1.5 Patch MakePIAPortable.csproj for Linux ARM64/LoongArch64
+    if (process.platform === 'linux' && (process.arch === 'arm64' || process.arch === 'loong64')) {
         if (fs.existsSync(csprojPath)) {
+            const replaceArch = process.arch === 'arm64' ? 'linux-arm64' : 'linux-loongarch64';
             try {
                 originalCsprojContent = fs.readFileSync(csprojPath, 'utf8');
                 if (originalCsprojContent.includes('linux-x64')) {
-                    console.log('Detected Linux ARM64, patching MakePIAPortable.csproj...');
-                    const newContent = originalCsprojContent.replace(/linux-x64/g, 'linux-arm64');
+                    console.log('Detected Linux ARM64/LoongArch64, patching MakePIAPortable.csproj...');
+                    const newContent = originalCsprojContent.replace(/linux-x64/g, replaceArch);
                     fs.writeFileSync(csprojPath, newContent, 'utf8');
                     modified = true;
                 }
