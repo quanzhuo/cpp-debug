@@ -2,7 +2,6 @@ import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import localize from './localize';
 import { ManualPromise } from './manualPromise';
 
 export enum ArchType {
@@ -129,14 +128,14 @@ export async function spawnChildProcess(program: string, args: string[] = [], co
     const programOutput: ProcessOutput = await spawnChildProcessImpl(program, args, continueOn, skipLogging, cancellationToken);
     const exitCode: number | NodeJS.Signals | undefined = programOutput.exitCode;
     if (programOutput.exitCode) {
-        return { succeeded: false, exitCode, outputError: programOutput.stderr, output: programOutput.stderr || programOutput.stdout || localize('process.exited', 'Process exited with code {0}', `${exitCode}`) };
+        return { succeeded: false, exitCode, outputError: programOutput.stderr, output: programOutput.stderr || programOutput.stdout || vscode.l10n.t('Process exited with code {0}', `${exitCode}`) };
     } else {
         let stdout: string;
         if (programOutput.stdout.length) {
             // Type system doesn't work very well here, so we need call toString
             stdout = programOutput.stdout;
         } else {
-            stdout = localize('process.succeeded', 'Process executed successfully.');
+            stdout = vscode.l10n.t('Process executed successfully.');
         }
         return { succeeded: true, exitCode, outputError: programOutput.stderr, output: stdout };
     }
@@ -164,7 +163,7 @@ async function spawnChildProcessImpl(program: string, args: string[], continueOn
     }
 
     const cancellationTokenListener: vscode.Disposable | undefined = cancellationToken?.onCancellationRequested(() => {
-        // getOutputChannelLogger().appendLine(localize('killing.process', 'Killing process {0}', program));
+        // getOutputChannelLogger().appendLine(vscode.l10n.t('Killing process {0}', program));
         proc.kill();
     });
 
@@ -321,7 +320,7 @@ export class ParsedEnvironmentFile {
         // show error message if single lines cannot get parsed
         let warning: string | undefined;
         if (parseErrors.length !== 0) {
-            warning = localize("ignoring.lines.in.envfile", "Ignoring non-parsable lines in {0} {1}: ", "envFile", envFile);
+            warning = vscode.l10n.t('Ignoring non-parsable lines in {0} {1}: ', 'envFile', envFile);
             parseErrors.forEach(function (value, idx, array): void {
                 warning += "\"" + value + "\"" + ((idx !== array.length - 1) ? ", " : ".");
             });

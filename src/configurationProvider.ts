@@ -1,9 +1,9 @@
-import * as vscode from 'vscode';
-import * as path from 'path';
 import * as os from 'os';
-import { whichAsync, ParsedEnvironmentFile, spawnChildProcess, checkFileExists } from './utils';
+import * as path from 'path';
+import * as vscode from 'vscode';
 import { AttachItem } from './attachQuickPick';
 import { NativeAttachItemsProviderFactory } from './nativeAttach';
+import { checkFileExists, ParsedEnvironmentFile, spawnChildProcess, whichAsync } from './utils';
 
 /**
  * DebugConfigurationProvider for C/C++ debugging with GDB Pretty Printers
@@ -53,13 +53,13 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
         // 1. Handle Enable Pretty Printing
         const enablePrettyPrinting = cppSettings.get<boolean>('enablePrettyPrinting', true);
         if (enablePrettyPrinting) {
-            const hasPrettyPrinting = config.setupCommands.some((cmd: any) => 
+            const hasPrettyPrinting = config.setupCommands.some((cmd: any) =>
                 cmd.text && (cmd.text === '-enable-pretty-printing' || cmd.text.includes('-enable-pretty-printing'))
             );
 
             if (!hasPrettyPrinting) {
                 config.setupCommands.push({
-                    description: 'Enable pretty-printing for gdb',
+                    description: vscode.l10n.t('Enable pretty-printing for gdb'),
                     text: '-enable-pretty-printing',
                     ignoreFailures: true
                 });
@@ -73,7 +73,7 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
             const autoloadScriptPath = path.join(this.extensionPath, 'gdb-pretty-printers', 'autoload.py');
 
             // Check if the autoload script is already in setupCommands
-            const alreadyHasAutoload = config.setupCommands.some((cmd: any) => 
+            const alreadyHasAutoload = config.setupCommands.some((cmd: any) =>
                 cmd.text && cmd.text.includes('autoload.py')
             );
 
@@ -81,9 +81,9 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
                 // Add the autoload command at the beginning of setupCommands
                 // Use forward slashes for cross-platform compatibility (GDB accepts both)
                 const normalizedPath = autoloadScriptPath.replace(/\\/g, '/');
-                
+
                 config.setupCommands.unshift({
-                    description: 'Load GDB Pretty Printers',
+                    description: vscode.l10n.t('Load GDB Pretty Printers'),
                     text: `source ${normalizedPath}`,
                     ignoreFailures: true  // Don't fail if the script has issues
                 });
@@ -112,7 +112,7 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
         if (Array.isArray(config.deploySteps) && config.deploySteps.length > 0) {
             const succeeded = await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
-                title: 'Running deploy steps...'
+                title: vscode.l10n.t('Running deploy steps...')
             }, () => this.runDeploySteps(config, _token));
             if (!succeeded || _token?.isCancellationRequested) {
                 return undefined;
@@ -132,14 +132,14 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
                 const selection = await vscode.window.showQuickPick(processes, {
                     matchOnDetail: true,
                     matchOnDescription: true,
-                    placeHolder: 'Select the process to attach to'
+                    placeHolder: vscode.l10n.t('Select the process to attach to')
                 });
                 processId = selection?.id;
             }
             if (processId) {
                 config.processId = processId;
             } else {
-                void vscode.window.showErrorMessage('No process was selected.');
+                void vscode.window.showErrorMessage(vscode.l10n.t('No process was selected.'));
                 return undefined;
             }
         }
@@ -159,13 +159,13 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
                 { compiler: 'clang++', miMode: 'lldb' },
                 { compiler: 'gcc', miMode: 'gdb' },
                 { compiler: 'g++', miMode: 'gdb' },
-              ]
+            ]
             : [
                 { compiler: platform === 'win32' ? 'gcc.exe' : 'gcc', miMode: 'gdb' },
                 { compiler: platform === 'win32' ? 'g++.exe' : 'g++', miMode: 'gdb' },
                 { compiler: platform === 'win32' ? 'clang.exe' : 'clang', miMode: 'gdb' },
                 { compiler: platform === 'win32' ? 'clang++.exe' : 'clang++', miMode: 'gdb' },
-              ];
+            ];
 
         const debuggerCache = new Map<string, string | undefined>();
         const getDebugger = async (miMode: 'gdb' | 'lldb'): Promise<string | undefined> => {
@@ -197,7 +197,7 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
                 MIMode: entry.miMode,
                 miDebuggerPath: debuggerPath,
                 setupCommands: [
-                    { description: 'Enable pretty-printing for gdb', text: '-enable-pretty-printing', ignoreFailures: true }
+                    { description: vscode.l10n.t('Enable pretty-printing for gdb'), text: '-enable-pretty-printing', ignoreFailures: true }
                 ]
             });
         }
@@ -217,7 +217,7 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
                 externalConsole: false,
                 MIMode: miMode,
                 setupCommands: [
-                    { description: 'Enable pretty-printing for gdb', text: '-enable-pretty-printing', ignoreFailures: true }
+                    { description: vscode.l10n.t('Enable pretty-printing for gdb'), text: '-enable-pretty-printing', ignoreFailures: true }
                 ]
             });
         }
@@ -261,7 +261,7 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
                 config: c
             }));
             const selection = await vscode.window.showQuickPick(items, {
-                placeHolder: 'Select a debug configuration'
+                placeHolder: vscode.l10n.t('Select a debug configuration')
             });
             if (!selection) {
                 return;
@@ -279,7 +279,7 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
     public async addDebugConfiguration(textEditor: vscode.TextEditor): Promise<void> {
         const folder = vscode.workspace.getWorkspaceFolder(textEditor.document.uri);
         if (!folder) {
-            void vscode.window.showWarningMessage('Add debug configuration is not available for single file.');
+            void vscode.window.showWarningMessage(vscode.l10n.t('Add debug configuration is not available for single file.'));
             return;
         }
         await vscode.commands.executeCommand('workbench.action.debug.configure');
@@ -305,7 +305,7 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
             delete config.envFile;
         } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
-            throw new Error(`Failed to use envFile. Reason: ${msg}`);
+            throw new Error(vscode.l10n.t('Failed to use envFile. Reason: {0}', msg));
         }
     }
 
@@ -357,7 +357,7 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
             case 'scp':
             case 'rsync': {
                 if (!step.files || !step.targetDir || !step.host) {
-                    void vscode.window.showErrorMessage(`"host", "files", and "targetDir" are required in ${stepType} steps.`);
+                    void vscode.window.showErrorMessage(vscode.l10n.t('"host", "files", and "targetDir" are required in {0} steps.', stepType));
                     return false;
                 }
                 const host = typeof step.host === 'string' ? { hostName: step.host } : step.host;
@@ -383,7 +383,7 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
             }
             case 'ssh': {
                 if (!step.host || !step.command) {
-                    void vscode.window.showErrorMessage('"host" and "command" are required for ssh steps.');
+                    void vscode.window.showErrorMessage(vscode.l10n.t('"host" and "command" are required for ssh steps.'));
                     return false;
                 }
                 const host = typeof step.host === 'string' ? { hostName: step.host } : step.host;
@@ -403,7 +403,7 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
             }
             case 'shell': {
                 if (!step.command) {
-                    void vscode.window.showErrorMessage('"command" is required for shell steps.');
+                    void vscode.window.showErrorMessage(vscode.l10n.t('"command" is required for shell steps.'));
                     return false;
                 }
                 const result = await spawnChildProcess(step.command as string, [], step.continueOn, true, token);
@@ -414,7 +414,7 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
                 return true;
             }
             default: {
-                void vscode.window.showErrorMessage(`Deploy step type '${stepType}' is not supported.`);
+                void vscode.window.showErrorMessage(vscode.l10n.t('Deploy step type \'{0}\' is not supported.', stepType));
                 return false;
             }
         }
@@ -446,7 +446,7 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
         const selection = await vscode.window.showQuickPick(matches, {
             matchOnDetail: true,
             matchOnDescription: true,
-            placeHolder: `Multiple processes named '${targetName}' found. Select one to attach.`
+            placeHolder: vscode.l10n.t('Multiple processes named \'{0}\' found. Select one to attach.', targetName)
         });
         return selection?.id;
     }

@@ -4,7 +4,6 @@ import * as os from 'os';
 import * as vscode from 'vscode';
 import { AttachItem } from './attachQuickPick';
 import { AttachItemsProvider } from './attachToProcess';
-import localize from './localize';
 import { findPowerShell } from './utils';
 
 export class Process {
@@ -95,7 +94,7 @@ export class PsAttachItemsProvider extends NativeAttachItemsProvider {
                 processCmd = PsProcessParser.psLinuxCommand;
                 break;
             default:
-                throw new Error(localize("os.not.supported", 'Operating system "{0}" not supported.', os.platform()));
+                throw new Error(vscode.l10n.t('Operating system "{0}" not supported.', os.platform()));
         }
         const processes: string = await spawnChildProcess(processCmd, token);
         return PsProcessParser.ParseProcessFromPs(processes);
@@ -180,7 +179,7 @@ function spawnChildProcess(command: string, token?: vscode.CancellationToken): P
                 } catch (e) {
                     // Failed to kill process.
                 }
-                reject(new Error(localize("timeout.processList.spawn", '"{0}" timed out after {1} seconds.', command, `${seconds}`)));
+                reject(new Error(vscode.l10n.t('"{0}" timed out after {1} seconds.', command, `${seconds}`)));
                 return;
             }, seconds * 1000);
 
@@ -194,7 +193,7 @@ function spawnChildProcess(command: string, token?: vscode.CancellationToken): P
                 } catch (e) {
                     // Failed to kill process.
                 }
-                reject(new Error(localize("cancel.processList.spawn", '"{0}" canceled.', command)));
+                reject(new Error(vscode.l10n.t('"{0}" canceled.', command)));
                 return;
             });
 
@@ -223,7 +222,7 @@ function spawnChildProcess(command: string, token?: vscode.CancellationToken): P
             process.on('close', (code: number) => {
                 cleanUpCallbacks();
                 if (code !== 0) {
-                    let errorMessage: string = localize("error.processList.spawn", '"{0}" exited with code: "{1}".', command, `${code}`);
+                    let errorMessage: string = vscode.l10n.t('"{0}" exited with code: "{1}".', command, `${code}`);
                     if (stderr && stderr.length > 0) {
                         errorMessage += os.EOL;
                         errorMessage += stderr;
@@ -251,7 +250,7 @@ function spawnChildProcess(command: string, token?: vscode.CancellationToken): P
                 reject(error);
             });
         } else {
-            reject(new Error(localize("failed.processList.spawn", 'Failed to spawn "{0}".', command)));
+            reject(new Error(vscode.l10n.t('Failed to spawn "{0}".', command)));
         }
     });
 }
