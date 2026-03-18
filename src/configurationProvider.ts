@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { whichAsync } from './utils';
 import { ParsedEnvironmentFile } from './utils';
+import { spawnChildProcess } from './utils';
 
 /**
  * DebugConfigurationProvider for C/C++ debugging with GDB Pretty Printers
@@ -106,6 +107,17 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
 
         // Expand ${env:VAR} references in sourceFileMap keys and values
         this.resolveSourceFileMapVariables(config);
+
+        // Execute deploy steps before the debug session starts
+        if (Array.isArray(config.deploySteps) && config.deploySteps.length > 0) {
+            const succeeded = await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: 'Running deploy steps...'
+            }, () => this.runDeploySteps(config, _token));
+            if (!succeeded || _token?.isCancellationRequested) {
+                return undefined;
+            }
+        }
 
         return config;
     }
@@ -296,4 +308,94 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
         }
         config.sourceFileMap = newMap;
     }
+    private async runDeploySteps(config: vscode.DebugConfiguration, token?: vscode.CancellationToken): Promise<boolean> {
+        for (const step of config.deploySteps) {
+            // Honor debug/noDebug filtering
+            if ((config.noDebug && step.debug === true) || (!config.noDebug && step.debug === false)) {
+                continue;
+            }
+            if (token?.isCancellationRequested) { return false; }
+            const ok = await this.runSingleDeployStep(step, config, token);
+            if (!ok) { return false; }
+        }
+        return true;
+    }
+
+    private async runSingleDeployStep(step: any, config: vscode.DebugConfiguration, token?: vscode.CancellationToken): Promise<boolean> {
+        const stepType: string = step.type;
+        switch (stepType) {
+            case 'command': {
+                const args: unknown[] = Array.isArray(step.args) ? step.args : [];
+                const returnCode: unknown = await vscode.commands.executeCommand(step.command, ...args);
+                return !returnCode;
+            }
+            case 'scp':
+            case 'rsync': {
+                if (!step.files || !step.targetDir || !step.host) {
+                    void vscode.window.showErrorMessage(`"host", "files", and "targetDir" are required in ${stepType} steps.`);
+                    return false;
+                }
+                const host = typeof step.host === 'string' ? { hostName: step.host } : step.host;
+                const filesStr: string = Array.isArray(step.files)
+                    ? (step.files as string[]).map((f: string) => `"${f}"`).join(' ')
+                    : `"${step.files}"`;
+                const portArg = host.port ? (stepType === 'scp' ? `-P ${host.port}` : `--port=${host.port}`) : '';
+                const jumpArg = host.jumpHosts?.length
+                    ? `-J ${(host.jumpHosts as any[]).map((h: any) => deployHostAddress(h)).join(',')}`
+                    : '';
+                const recursiveArg = step.recursive !== false ? '-r' : '';
+                const hostAddr = deployHostAddress(host);
+                const tool = stepType === 'scp' ? (config.scpPath || 'scp') : (config.rsyncPath || 'rsync');
+                const rsyncFlags = stepType === 'rsync' ? '-lKpvz' : '';
+                const cmd = [tool, rsyncFlags, recursiveArg, portArg, jumpArg, filesStr, `${hostAddr}:${step.targetDir}`]
+                    .filter(Boolean).join(' ');
+                const result = await spawnChildProcess(cmd, [], step.continueOn, true, token);
+                if (!result.succeeded) {
+                    void vscode.window.showErrorMessage(result.output);
+                    return false;
+                }
+                return true;
+            }
+            case 'ssh': {
+                if (!step.host || !step.command) {
+                    void vscode.window.showErrorMessage('"host" and "command" are required for ssh steps.');
+                    return false;
+                }
+                const host = typeof step.host === 'string' ? { hostName: step.host } : step.host;
+                const portArg = host.port ? `-p ${host.port}` : '';
+                const jumpArg = host.jumpHosts?.length
+                    ? `-J ${(host.jumpHosts as any[]).map((h: any) => deployHostAddress(h)).join(',')}`
+                    : '';
+                const sshTool = config.sshPath || 'ssh';
+                const hostAddr = deployHostAddress(host);
+                const cmd = [sshTool, portArg, jumpArg, hostAddr, `"${step.command}"`].filter(Boolean).join(' ');
+                const result = await spawnChildProcess(cmd, [], step.continueOn, true, token);
+                if (!result.succeeded) {
+                    void vscode.window.showErrorMessage(result.output);
+                    return false;
+                }
+                return true;
+            }
+            case 'shell': {
+                if (!step.command) {
+                    void vscode.window.showErrorMessage('"command" is required for shell steps.');
+                    return false;
+                }
+                const result = await spawnChildProcess(step.command as string, [], step.continueOn, true, token);
+                if (!result.succeeded) {
+                    void vscode.window.showErrorMessage(result.output);
+                    return false;
+                }
+                return true;
+            }
+            default: {
+                void vscode.window.showErrorMessage(`Deploy step type '${stepType}' is not supported.`);
+                return false;
+            }
+        }
+    }
+}
+
+function deployHostAddress(host: { hostName: string; user?: string }): string {
+    return host.user ? `${host.user}@${host.hostName}` : host.hostName;
 }
