@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as os from 'os';
 import { whichAsync } from './utils';
+import { ParsedEnvironmentFile } from './utils';
 
 /**
  * DebugConfigurationProvider for C/C++ debugging with GDB Pretty Printers
@@ -22,6 +23,13 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
         config: vscode.DebugConfiguration,
         token?: vscode.CancellationToken
     ): vscode.ProviderResult<vscode.DebugConfiguration> {
+        return this.resolveDebugConfigurationImpl(folder, config);
+    }
+
+    private resolveDebugConfigurationImpl(
+        folder: vscode.WorkspaceFolder | undefined,
+        config: vscode.DebugConfiguration
+    ): vscode.DebugConfiguration {
 
         // Only process cppdbg configurations
         if (config.type !== 'cppdbg') {
@@ -80,6 +88,24 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
                 });
             }
         }
+
+        return config;
+    }
+
+    async resolveDebugConfigurationWithSubstitutedVariables(
+        folder: vscode.WorkspaceFolder | undefined,
+        config: vscode.DebugConfiguration,
+        _token?: vscode.CancellationToken
+    ): Promise<vscode.DebugConfiguration | undefined> {
+        if (!config || !config.type) {
+            return undefined;
+        }
+
+        // Merge environment variables from envFile into config.environment
+        this.resolveEnvFile(config, folder);
+
+        // Expand ${env:VAR} references in sourceFileMap keys and values
+        this.resolveSourceFileMapVariables(config);
 
         return config;
     }
@@ -220,5 +246,54 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
             return;
         }
         await vscode.commands.executeCommand('workbench.action.debug.configure');
+    }
+
+    private resolveEnvFile(config: vscode.DebugConfiguration, folder?: vscode.WorkspaceFolder): void {
+        if (!config.envFile) { return; }
+
+        let envFilePath: string = config.envFile as string;
+        // ${workspaceFolder} / ${workspaceRoot} are substituted by VSCode before this hook,
+        // but handle any remaining ${env:VAR} patterns just in case.
+        envFilePath = envFilePath.replace(/\${env:(\w+)}/g, (_, name: string) => process.env[name] ?? '');
+        if (folder?.uri?.fsPath) {
+            envFilePath = envFilePath.replace(/(\${workspaceFolder}|\${workspaceRoot})/g, folder.uri.fsPath);
+        }
+
+        try {
+            const parsedFile = ParsedEnvironmentFile.CreateFromFile(envFilePath, config.environment);
+            if (parsedFile.Warning) {
+                void vscode.window.showWarningMessage(parsedFile.Warning);
+            }
+            config.environment = parsedFile.Env;
+            delete config.envFile;
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            throw new Error(`Failed to use envFile. Reason: ${msg}`);
+        }
+    }
+
+    private resolveSourceFileMapVariables(config: vscode.DebugConfiguration): void {
+        if (!config.sourceFileMap) { return; }
+
+        const expandEnvVars = (str: string): string =>
+            str.replace(/\${env:(\w+)}/g, (_, name: string) => process.env[name] ?? '');
+
+        const newMap: Record<string, string | object> = {};
+        for (const [src, target] of Object.entries(config.sourceFileMap as Record<string, string | object>)) {
+            const newSrc = expandEnvVars(src);
+            if (typeof target === 'string') {
+                newMap[newSrc] = expandEnvVars(target);
+            } else if (target && typeof target === 'object') {
+                const tObj = target as { editorPath?: string; useForBreakpoints?: boolean };
+                const newTarget = { ...tObj };
+                if (newTarget.editorPath) {
+                    newTarget.editorPath = expandEnvVars(newTarget.editorPath);
+                }
+                newMap[newSrc] = newTarget;
+            } else {
+                newMap[newSrc] = target as string;
+            }
+        }
+        config.sourceFileMap = newMap;
     }
 }
