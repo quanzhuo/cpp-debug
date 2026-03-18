@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as os from 'os';
-import { whichAsync } from './utils';
-import { ParsedEnvironmentFile } from './utils';
-import { spawnChildProcess } from './utils';
+import { whichAsync, ParsedEnvironmentFile, spawnChildProcess, checkFileExists } from './utils';
+import { AttachItem } from './attachQuickPick';
+import { NativeAttachItemsProviderFactory } from './nativeAttach';
 
 /**
  * DebugConfigurationProvider for C/C++ debugging with GDB Pretty Printers
@@ -115,6 +115,31 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
                 title: 'Running deploy steps...'
             }, () => this.runDeploySteps(config, _token));
             if (!succeeded || _token?.isCancellationRequested) {
+                return undefined;
+            }
+        }
+
+        // Auto-resolve processId for local attach configurations
+        if (config.request === 'attach' && !config.processId && !config.pipeTransport && !config.useExtendedRemote) {
+            let processId: string | undefined;
+            if (config.program) {
+                processId = await this.findProcessByProgramName(config.program as string, _token);
+            }
+            if (!processId) {
+                // Fall back to interactive process picker
+                const provider = NativeAttachItemsProviderFactory.Get();
+                const processes: AttachItem[] = await provider.getAttachItems(_token);
+                const selection = await vscode.window.showQuickPick(processes, {
+                    matchOnDetail: true,
+                    matchOnDescription: true,
+                    placeHolder: 'Select the process to attach to'
+                });
+                processId = selection?.id;
+            }
+            if (processId) {
+                config.processId = processId;
+            } else {
+                void vscode.window.showErrorMessage('No process was selected.');
                 return undefined;
             }
         }
@@ -394,8 +419,51 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
             }
         }
     }
+    private async findProcessByProgramName(programPath: string, token?: vscode.CancellationToken): Promise<string | undefined> {
+        if (!await checkExecutableExists(programPath)) {
+            return undefined;
+        }
+
+        const isWin = os.platform() === 'win32';
+        let targetName = path.basename(programPath);
+        if (isWin) {
+            targetName = targetName.toLowerCase();
+            if (!targetName.endsWith('.exe')) { targetName += '.exe'; }
+        }
+
+        const provider = NativeAttachItemsProviderFactory.Get();
+        const processes: AttachItem[] = await provider.getAttachItems(token);
+
+        const matches = processes.filter(p => {
+            const name = isWin ? p.label.toLowerCase() : p.label;
+            return name === targetName;
+        });
+
+        if (matches.length === 0) { return undefined; }
+        if (matches.length === 1) { return matches[0].id; }
+
+        // Multiple matches — let user choose
+        const selection = await vscode.window.showQuickPick(matches, {
+            matchOnDetail: true,
+            matchOnDescription: true,
+            placeHolder: `Multiple processes named '${targetName}' found. Select one to attach.`
+        });
+        return selection?.id;
+    }
 }
 
 function deployHostAddress(host: { hostName: string; user?: string }): string {
     return host.user ? `${host.user}@${host.hostName}` : host.hostName;
+}
+
+async function checkExecutableExists(filePath: string): Promise<boolean> {
+    if (await checkFileExists(filePath)) { return true; }
+    if (os.platform() === 'win32') {
+        const lower = filePath.toLowerCase();
+        if (lower.endsWith('.exe') || lower.endsWith('.cmd') || lower.endsWith('.bat')) { return false; }
+        return await checkFileExists(filePath + '.exe')
+            || await checkFileExists(filePath + '.cmd')
+            || await checkFileExists(filePath + '.bat');
+    }
+    return false;
 }
