@@ -17,6 +17,10 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.debug.registerDebugConfigurationProvider('cppdbg', configProvider)
 	);
+	// Register as Dynamic provider so the "Run and Debug" panel shows auto-detected configs
+	context.subscriptions.push(
+		vscode.debug.registerDebugConfigurationProvider('cppdbg', configProvider, vscode.DebugConfigurationProviderTriggerKind.Dynamic)
+	);
 
 	// Register Build and Debug / Build and Run / Add Debug Configuration commands
 	context.subscriptions.push(

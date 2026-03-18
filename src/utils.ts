@@ -223,6 +223,19 @@ export function escapeStringForRegex(str: string): string {
 }
 
 /**
+ * Resolves the full path of an executable on PATH.
+ * Returns undefined if not found.
+ */
+export function whichAsync(name: string): Promise<string | undefined> {
+    return new Promise(resolve => {
+        const cmd = process.platform === 'win32' ? `where "${name}"` : `which "${name}"`;
+        cp.exec(cmd, (err, stdout) => {
+            resolve(err || !stdout.trim() ? undefined : stdout.trim().split(/[\r\n]+/)[0]);
+        });
+    });
+}
+
+/**
  * Find PowerShell executable from PATH (for Windows only).
  */
 export function findPowerShell(): string | undefined {

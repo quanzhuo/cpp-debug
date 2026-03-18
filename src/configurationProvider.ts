@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as os from 'os';
+import { whichAsync } from './utils';
 
 /**
  * DebugConfigurationProvider for C/C++ debugging with GDB Pretty Printers
@@ -82,6 +84,84 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
         return config;
     }
 
+    async provideDebugConfigurations(folder?: vscode.WorkspaceFolder, _token?: vscode.CancellationToken): Promise<vscode.DebugConfiguration[]> {
+        const configs: vscode.DebugConfiguration[] = [];
+        const platform = os.platform();
+        const programExt = platform === 'win32' ? '.exe' : '';
+
+        type CompilerEntry = { compiler: string; miMode: 'gdb' | 'lldb' };
+        const probeList: CompilerEntry[] = platform === 'darwin'
+            ? [
+                { compiler: 'clang', miMode: 'lldb' },
+                { compiler: 'clang++', miMode: 'lldb' },
+                { compiler: 'gcc', miMode: 'gdb' },
+                { compiler: 'g++', miMode: 'gdb' },
+              ]
+            : [
+                { compiler: platform === 'win32' ? 'gcc.exe' : 'gcc', miMode: 'gdb' },
+                { compiler: platform === 'win32' ? 'g++.exe' : 'g++', miMode: 'gdb' },
+                { compiler: platform === 'win32' ? 'clang.exe' : 'clang', miMode: 'gdb' },
+                { compiler: platform === 'win32' ? 'clang++.exe' : 'clang++', miMode: 'gdb' },
+              ];
+
+        const debuggerCache = new Map<string, string | undefined>();
+        const getDebugger = async (miMode: 'gdb' | 'lldb'): Promise<string | undefined> => {
+            if (!debuggerCache.has(miMode)) {
+                const name = platform === 'win32' ? `${miMode}.exe` : miMode;
+                debuggerCache.set(miMode, await whichAsync(name));
+            }
+            return debuggerCache.get(miMode);
+        };
+
+        for (const entry of probeList) {
+            const compilerPath = await whichAsync(entry.compiler);
+            if (!compilerPath) { continue; }
+
+            const debuggerPath = await getDebugger(entry.miMode);
+            if (!debuggerPath) { continue; }
+
+            const compilerName = path.basename(entry.compiler, programExt);
+            configs.push({
+                name: `C/C++: ${compilerName} build and debug active file`,
+                type: 'cppdbg',
+                request: 'launch',
+                program: `\${fileDirname}/\${fileBasenameNoExtension}${programExt}`,
+                args: [],
+                stopAtEntry: false,
+                cwd: '${fileDirname}',
+                environment: [],
+                externalConsole: false,
+                MIMode: entry.miMode,
+                miDebuggerPath: debuggerPath,
+                setupCommands: [
+                    { description: 'Enable pretty-printing for gdb', text: '-enable-pretty-printing', ignoreFailures: true }
+                ]
+            });
+        }
+
+        // Fallback template when no compiler/debugger pair was detected
+        if (configs.length === 0) {
+            const miMode = platform === 'darwin' ? 'lldb' : 'gdb';
+            configs.push({
+                name: 'C/C++: Launch',
+                type: 'cppdbg',
+                request: 'launch',
+                program: `\${fileDirname}/\${fileBasenameNoExtension}${programExt}`,
+                args: [],
+                stopAtEntry: false,
+                cwd: '${fileDirname}',
+                environment: [],
+                externalConsole: false,
+                MIMode: miMode,
+                setupCommands: [
+                    { description: 'Enable pretty-printing for gdb', text: '-enable-pretty-printing', ignoreFailures: true }
+                ]
+            });
+        }
+
+        return configs;
+    }
+
     public getLaunchConfigs(folder?: vscode.WorkspaceFolder, type?: string): vscode.DebugConfiguration[] {
         const workspaceConfig = vscode.workspace.getConfiguration('launch', folder);
         const configs = workspaceConfig.inspect<vscode.DebugConfiguration[]>('configurations');
@@ -100,18 +180,13 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
 
     public async buildAndDebug(textEditor: vscode.TextEditor, debugModeOn: boolean = true): Promise<void> {
         const folder = vscode.workspace.getWorkspaceFolder(textEditor.document.uri);
-        const configs = this.getLaunchConfigs(folder, 'cppdbg');
-
-        if (configs.length === 0) {
-            const answer = await vscode.window.showInformationMessage(
-                'No cppdbg launch configurations found. Please add one to launch.json.',
-                'Open launch.json'
-            );
-            if (answer === 'Open launch.json') {
-                await this.addDebugConfiguration(textEditor);
-            }
-            return;
-        }
+        const existingConfigs = this.getLaunchConfigs(folder, 'cppdbg');
+        const generatedConfigs = await this.provideDebugConfigurations(folder);
+        // Show existing configs first; append generated ones that aren't already present
+        const configs = [
+            ...existingConfigs,
+            ...generatedConfigs.filter(g => !existingConfigs.some(e => e.name === g.name))
+        ];
 
         let selectedConfig: vscode.DebugConfiguration;
         if (configs.length === 1) {
