@@ -27,7 +27,10 @@
     "onLanguage:cpp",
     "onDebugResolve:cppdbg",
     "onCommand:cppdebug.pickNativeProcess",
-    "onCommand:cppdebug.pickRemoteNativeProcess"
+    "onCommand:cppdebug.pickRemoteNativeProcess",
+    "onCommand:cppdebug.buildAndDebugFile",
+    "onCommand:cppdebug.buildAndRunFile",
+    "onCommand:cppdebug.addDebugConfiguration"
   ],
   "downloadUrl": "https://gitee.com/openkylin/extensions-repo/tree/master/KylinIDETeam/cppdebug",
   "author": {
@@ -1915,6 +1918,47 @@
           "description": "%cppdebug.enablePrettyPrinting.description%"
         }
       }
+    },
+    "commands": [
+      {
+        "command": "cppdebug.buildAndDebugFile",
+        "title": "Build and Debug Active File",
+        "category": "C/C++ Debug",
+        "icon": "$(debug-alt)"
+      },
+      {
+        "command": "cppdebug.buildAndRunFile",
+        "title": "Build and Run Active File",
+        "category": "C/C++ Debug",
+        "icon": "$(run)"
+      },
+      {
+        "command": "cppdebug.addDebugConfiguration",
+        "title": "Add Debug Configuration",
+        "category": "C/C++ Debug",
+        "icon": "$(debug-configure)"
+      }
+    ],
+    "menus": {
+      "editor/title/run": [
+        {
+          "command": "cppdebug.buildAndDebugFile",
+          "when": "editorLangId =~ /^(c|cpp)$/",
+          "group": "navigation@0"
+        },
+        {
+          "command": "cppdebug.buildAndRunFile",
+          "when": "editorLangId =~ /^(c|cpp)$/",
+          "group": "navigation@1"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "cppdebug.addDebugConfiguration",
+          "when": "editorLangId =~ /^(c|cpp)$/ && workspaceFolderCount > 0",
+          "group": "navigation"
+        }
+      ]
     }
   },
   "scripts": {

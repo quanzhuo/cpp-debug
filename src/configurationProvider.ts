@@ -81,4 +81,69 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
 
         return config;
     }
+
+    public getLaunchConfigs(folder?: vscode.WorkspaceFolder, type?: string): vscode.DebugConfiguration[] {
+        const workspaceConfig = vscode.workspace.getConfiguration('launch', folder);
+        const configs = workspaceConfig.inspect<vscode.DebugConfiguration[]>('configurations');
+        let result: vscode.DebugConfiguration[] = [];
+        if (configs?.workspaceFolderValue) {
+            result = result.concat(configs.workspaceFolderValue);
+        }
+        if (configs?.workspaceValue) {
+            result = result.concat(configs.workspaceValue);
+        }
+        if (configs?.globalValue) {
+            result = result.concat(configs.globalValue);
+        }
+        return result.filter(c => c.name && c.request === 'launch' && (type ? c.type === type : true));
+    }
+
+    public async buildAndDebug(textEditor: vscode.TextEditor, debugModeOn: boolean = true): Promise<void> {
+        const folder = vscode.workspace.getWorkspaceFolder(textEditor.document.uri);
+        const configs = this.getLaunchConfigs(folder, 'cppdbg');
+
+        if (configs.length === 0) {
+            const answer = await vscode.window.showInformationMessage(
+                'No cppdbg launch configurations found. Please add one to launch.json.',
+                'Open launch.json'
+            );
+            if (answer === 'Open launch.json') {
+                await this.addDebugConfiguration(textEditor);
+            }
+            return;
+        }
+
+        let selectedConfig: vscode.DebugConfiguration;
+        if (configs.length === 1) {
+            selectedConfig = configs[0];
+        } else {
+            const items = configs.map(c => ({
+                label: c.name as string,
+                description: c.preLaunchTask ? `preLaunchTask: ${c.preLaunchTask}` : undefined,
+                config: c
+            }));
+            const selection = await vscode.window.showQuickPick(items, {
+                placeHolder: 'Select a debug configuration'
+            });
+            if (!selection) {
+                return;
+            }
+            selectedConfig = selection.config;
+        }
+
+        await vscode.debug.startDebugging(folder, selectedConfig, { noDebug: !debugModeOn });
+    }
+
+    public async buildAndRun(textEditor: vscode.TextEditor): Promise<void> {
+        return this.buildAndDebug(textEditor, false);
+    }
+
+    public async addDebugConfiguration(textEditor: vscode.TextEditor): Promise<void> {
+        const folder = vscode.workspace.getWorkspaceFolder(textEditor.document.uri);
+        if (!folder) {
+            void vscode.window.showWarningMessage('Add debug configuration is not available for single file.');
+            return;
+        }
+        await vscode.commands.executeCommand('workbench.action.debug.configure');
+    }
 }

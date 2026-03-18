@@ -17,6 +17,17 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.debug.registerDebugConfigurationProvider('cppdbg', configProvider)
 	);
+
+	// Register Build and Debug / Build and Run / Add Debug Configuration commands
+	context.subscriptions.push(
+		vscode.commands.registerTextEditorCommand('cppdebug.buildAndDebugFile', (textEditor) => configProvider.buildAndDebug(textEditor))
+	);
+	context.subscriptions.push(
+		vscode.commands.registerTextEditorCommand('cppdebug.buildAndRunFile', (textEditor) => configProvider.buildAndRun(textEditor))
+	);
+	context.subscriptions.push(
+		vscode.commands.registerTextEditorCommand('cppdebug.addDebugConfiguration', (textEditor) => configProvider.addDebugConfiguration(textEditor))
+	);
 }
 
 export function deactivate() { }
