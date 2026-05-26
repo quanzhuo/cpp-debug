@@ -1,9 +1,15 @@
 # Change Log
 
+## v0.3.0
+
+- 内置 gdb-pretty-printers for Qt, 美化打印比 Natvis 性能更好
+- 扩展不再内置 Qt5.Natvis 文件
+- 添加配置项：`cppdebug.enablePrettyPrinting` 和 `cppdebug.autoLoadPrettyPrinters`
+- 更新 MIEngine
+
 ## v0.2.0
 
 - update MIEngine to latest version
-
 
 ## v0.1.0
 
