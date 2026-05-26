@@ -16,3 +16,4 @@ build-MIEngine.mjs
 esbuild.js
 submodules/**
 .gitmodules
+CPPDBG_CONFIGURATION_REFERENCE.zh-CN.md

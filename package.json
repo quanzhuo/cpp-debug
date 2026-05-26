@@ -2,7 +2,7 @@
   "name": "cppdebug",
   "displayName": "C/C++ Debug",
   "description": "C/C++ Debugger extension using MIEngine",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "license": "MIT",
   "engines": {
     "vscode": "^1.68.0"
