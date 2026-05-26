@@ -1,4 +1,4 @@
-# Cpp Debug
+# C/C++ Debug
 
 A Visual Studio Code extension for debugging C/C++ applications with GDB or LLDB.
 
