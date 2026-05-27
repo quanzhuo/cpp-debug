@@ -15,6 +15,14 @@
 			"outFiles": [
 				"${workspaceFolder}/dist/**/*.js"
 			],
+			"sourceMapPathOverrides": {
+				"../src/*": "${workspaceFolder}/src/*",
+				"../node_modules/*": "${workspaceFolder}/node_modules/*"
+			},
+			"resolveSourceMapLocations": [
+				"${workspaceFolder}/dist/**/*.js",
+				"!**/node_modules/**"
+			],
 			"preLaunchTask": "${defaultBuildTask}"
 		}
 	]

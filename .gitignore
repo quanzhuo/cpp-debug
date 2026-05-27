@@ -1,7 +1,5 @@
 node_modules/
-debugAdapter/
 out/
 *.vsix
 dist/
-gdb-pretty-printers/
 CPPDBG_CONFIGURATION_REFERENCE.zh-CN.md

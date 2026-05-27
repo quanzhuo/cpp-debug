@@ -8,7 +8,8 @@ const __dirname = path.dirname(__filename);
 
 const rootDir = __dirname;
 const miEngineDir = path.join(rootDir, 'submodules', 'MIEngine');
-const debugAdapterDir = path.join(rootDir, 'debugAdapter');
+const distDir = path.join(rootDir, 'dist');
+const debugAdapterDir = path.join(distDir, 'debugAdapter');
 const csprojPath = path.join(miEngineDir, 'src', 'MakePIAPortable', 'MakePIAPortable.csproj');
 
 async function build() {
@@ -17,6 +18,7 @@ async function build() {
         console.log(`Deleting ${debugAdapterDir}...`);
         fs.rmSync(debugAdapterDir, { recursive: true, force: true });
     }
+    fs.mkdirSync(distDir, { recursive: true });
 
     let originalCsprojContent = null;
     let modified = false;

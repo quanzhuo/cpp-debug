@@ -62,13 +62,13 @@
           "rust"
         ],
         "windows": {
-          "program": "./debugAdapter/OpenDebugAD7.exe"
+          "program": "./dist/debugAdapter/OpenDebugAD7.exe"
         },
         "linux": {
-          "program": "./debugAdapter/OpenDebugAD7"
+          "program": "./dist/debugAdapter/OpenDebugAD7"
         },
         "osx": {
-          "program": "./debugAdapter/OpenDebugAD7"
+          "program": "./dist/debugAdapter/OpenDebugAD7"
         },
         "variables": {
           "pickProcess": "cppdebug.pickNativeProcess",

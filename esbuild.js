@@ -6,12 +6,15 @@ const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
 
 async function main() {
-    // Copy gdb-pretty-printers submodule to root
+    const distDir = path.join(__dirname, 'dist');
+    const prettyPrintersDir = path.join(distDir, 'gdb-pretty-printers');
+
+    // Copy gdb-pretty-printers submodule to dist
     try {
         const src = path.join(__dirname, 'submodules', 'gdb-pretty-printers');
-        const dest = path.join(__dirname, 'gdb-pretty-printers');
+        const dest = prettyPrintersDir;
 
-        // Remove destination if it exists to ensure clean state
+        fse.ensureDirSync(distDir);
         fse.removeSync(dest);
 
         console.log(`[build] Copying gdb-pretty-printers to ${dest}...`);
@@ -29,9 +32,8 @@ async function main() {
     }
 
     if (production) {
-        // remove dist folder
-        const fs = require('fs');
-        fs.rmSync('dist', { recursive: true, force: true });
+        fse.removeSync(path.join(distDir, 'extension.js'));
+        fse.removeSync(path.join(distDir, 'extension.js.map'));
     }
     const ctx = await esbuild.context({
         entryPoints: ['src/extension.ts'],
@@ -39,9 +41,9 @@ async function main() {
         format: 'cjs',
         minify: production,
         sourcemap: !production,
-        sourcesContent: false,
+        sourcesContent: !production,
         platform: 'node',
-        outfile: 'dist/extension.js',
+        outfile: path.join(distDir, 'extension.js'),
         external: ['vscode'],
         logLevel: 'silent',
         plugins: [

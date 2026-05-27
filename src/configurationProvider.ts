@@ -70,7 +70,7 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
         const autoLoadEnabled = cppSettings.get<boolean>('autoLoadPrettyPrinters', true);
         if (autoLoadEnabled) {
             // Construct the path to autoload.py
-            const autoloadScriptPath = path.join(this.extensionPath, 'gdb-pretty-printers', 'autoload.py');
+            const autoloadScriptPath = path.join(this.extensionPath, 'dist', 'gdb-pretty-printers', 'autoload.py');
 
             // Check if the autoload script is already in setupCommands
             const alreadyHasAutoload = config.setupCommands.some((cmd: any) =>
