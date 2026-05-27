@@ -2001,6 +2001,8 @@
   "scripts": {
     "compile": "npm run check-types && node esbuild.js",
     "check-types": "tsc --noEmit",
+    "compile:test": "tsc --project tsconfig.json",
+    "test": "npm run compile && npm run compile:test && vscode-test",
     "watch": "npm-run-all -p watch:*",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",

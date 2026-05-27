@@ -3,3 +3,4 @@ out/
 *.vsix
 dist/
 CPPDBG_CONFIGURATION_REFERENCE.zh-CN.md
+.vscode-test/**
