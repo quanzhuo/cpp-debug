@@ -7,7 +7,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { afterEach, before, after } from 'mocha';
-import { CppDebugConfigurationProvider } from '../configurationProvider';
+import { CppDebugConfigurationProvider, isDeployStepsSupported, isGlobPattern, resolveDeployFiles, validateDeploySteps } from '../configurationProvider';
 
 function createWorkspaceFolder(folderPath: string): vscode.WorkspaceFolder {
 	return {
@@ -175,6 +175,99 @@ suite('Cpp Debug Extension Integration', () => {
 		const resolved = await provider.resolveDebugConfigurationWithSubstitutedVariables(undefined, config);
 		assert.ok(resolved, 'The configuration should resolve successfully');
 		assert.deepStrictEqual(resolved!.args, ['from-env', '${literal}']);
+	});
+
+	test('deploySteps support requires VS Code 1.69+', () => {
+		assert.strictEqual(isDeployStepsSupported('1.68.2'), false);
+		assert.strictEqual(isDeployStepsSupported('1.69.0'), true);
+		assert.strictEqual(isDeployStepsSupported('2.0.0'), true);
+	});
+
+	test('deploySteps command args must be an array', () => {
+		const error = validateDeploySteps([
+			{ type: 'command', command: 'x', args: 'not-array' },
+		]);
+		assert.strictEqual(error, '"args" in command deploy step must be an array.');
+	});
+
+	test('deploySteps scp/rsync files must be string or string array', () => {
+		const error = validateDeploySteps([
+			{ type: 'scp', host: 'example.com', targetDir: '/tmp', files: [1, 2] },
+		]);
+		assert.strictEqual(error, '"files" must be a string or an array of strings in scp steps.');
+	});
+
+	test('deploySteps ssh localForwards rejects conflicting fields', () => {
+		const error = validateDeploySteps([
+			{
+				type: 'ssh',
+				host: {
+					hostName: 'example.com',
+					localForwards: [
+						{ localSocket: '/tmp/a.sock', port: 9000, host: '127.0.0.1', hostPort: 9001 },
+					],
+				},
+				command: 'echo test',
+			},
+		]);
+		assert.strictEqual(error, '"localSocket" cannot be specified at the same time with "bindAddress" or "port" in localForwards');
+	});
+
+	test('deploySteps ssh command must be a string', () => {
+		const error = validateDeploySteps([
+			{ type: 'ssh', host: 'example.com', command: 1 },
+		]);
+		assert.strictEqual(error, '"command" is required for ssh steps.');
+	});
+
+	test('deploySteps shell command must be a string', () => {
+		const error = validateDeploySteps([
+			{ type: 'shell', command: 1 },
+		]);
+		assert.strictEqual(error, '"command" is required for shell steps.');
+	});
+
+	test('deploySteps host object requires hostName', () => {
+		const error = validateDeploySteps([
+			{ type: 'ssh', host: { user: 'dev' }, command: 'echo test' },
+		]);
+		assert.strictEqual(error, '"hostName" is required in host object.');
+	});
+
+	test('deploySteps host jumpHosts must be an array', () => {
+		const error = validateDeploySteps([
+			{ type: 'scp', host: { hostName: 'a', jumpHosts: 'bad' }, targetDir: '/tmp', files: 'a.out' },
+		]);
+		assert.strictEqual(error, '"jumpHosts" must be an array in host object.');
+	});
+
+	test('detects glob-style file patterns', () => {
+		assert.strictEqual(isGlobPattern('bin/*.out'), true);
+		assert.strictEqual(isGlobPattern('bin/app.out'), false);
+	});
+
+	test('expands deploy file glob patterns', async () => {
+		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cppdebug-glob-'));
+		tempDirs.push(tempDir);
+		const matchA = path.join(tempDir, 'a.out');
+		const matchB = path.join(tempDir, 'b.out');
+		fs.writeFileSync(matchA, 'a', 'utf8');
+		fs.writeFileSync(matchB, 'b', 'utf8');
+
+		const resolved = await resolveDeployFiles(path.join(tempDir, '*.out'));
+		assert.ok(resolved.files.includes(matchA));
+		assert.ok(resolved.files.includes(matchB));
+		assert.deepStrictEqual(resolved.missing, []);
+	});
+
+	test('returns missing files for unresolved deploy file paths', async () => {
+		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cppdebug-missing-'));
+		tempDirs.push(tempDir);
+		const missing = path.join(tempDir, 'missing.out');
+
+		const resolved = await resolveDeployFiles(missing);
+		assert.deepStrictEqual(resolved.files, []);
+		assert.deepStrictEqual(resolved.missing, [missing]);
 	});
 
 	test('runs command deploy steps before launch', async () => {

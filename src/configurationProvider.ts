@@ -1,10 +1,11 @@
+import { glob } from 'glob';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { AttachItem } from './attachQuickPick';
 import { expandAllStrings, ExpansionOptions, ExpansionVars } from './expand';
 import { NativeAttachItemsProviderFactory } from './nativeAttach';
-import { checkFileExists, ParsedEnvironmentFile, spawnChildProcess, whichAsync } from './utils';
+import { checkFileExists, ParsedEnvironmentFile, pathAccessible, spawnChildProcess, whichAsync } from './utils';
 
 /**
  * DebugConfigurationProvider for C/C++ debugging with GDB Pretty Printers
@@ -130,6 +131,17 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
 
         // Execute deploy steps before the debug session starts
         if (Array.isArray(config.deploySteps) && config.deploySteps.length > 0) {
+            if (!isDeployStepsSupported(vscode.version)) {
+                void vscode.window.showErrorMessage(vscode.l10n.t("'deploySteps' require VS Code 1.69+."));
+                return undefined;
+            }
+
+            const validationError = validateDeploySteps(config.deploySteps);
+            if (validationError) {
+                void vscode.window.showErrorMessage(validationError);
+                return undefined;
+            }
+
             const succeeded = await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
                 title: vscode.l10n.t('Running deploy steps...')
@@ -381,21 +393,27 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
                     void vscode.window.showErrorMessage(vscode.l10n.t('"host", "files", and "targetDir" are required in {0} steps.', stepType));
                     return false;
                 }
-                const host = typeof step.host === 'string' ? { hostName: step.host } : step.host;
-                const filesStr: string = Array.isArray(step.files)
-                    ? (step.files as string[]).map((f: string) => `"${f}"`).join(' ')
-                    : `"${step.files}"`;
-                const portArg = host.port ? (stepType === 'scp' ? `-P ${host.port}` : `--port=${host.port}`) : '';
-                const jumpArg = host.jumpHosts?.length
-                    ? `-J ${(host.jumpHosts as any[]).map((h: any) => deployHostAddress(h)).join(',')}`
-                    : '';
-                const recursiveArg = step.recursive !== false ? '-r' : '';
-                const hostAddr = deployHostAddress(host);
+                const host = normalizeDeployHost(step.host);
+                const filesResolution = await resolveDeployFiles(step.files);
+                if (filesResolution.missing.length > 0) {
+                    void vscode.window.showErrorMessage(vscode.l10n.t('Deploy step files not found: {0}', filesResolution.missing.join(', ')));
+                    return false;
+                }
+                const files = filesResolution.files;
+                if (files.length === 0) {
+                    void vscode.window.showErrorMessage(vscode.l10n.t('No files matched deploy step "files" patterns.'));
+                    return false;
+                }
+                const jumpHosts = normalizeJumpHosts(host.jumpHosts);
+                const recursive = step.recursive !== false;
+                const target = `${deployHostAddressNoPort(host)}:${step.targetDir}`;
+
                 const tool = stepType === 'scp' ? (config.scpPath || 'scp') : (config.rsyncPath || 'rsync');
-                const rsyncFlags = stepType === 'rsync' ? '-lKpvz' : '';
-                const cmd = [tool, rsyncFlags, recursiveArg, portArg, jumpArg, filesStr, `${hostAddr}:${step.targetDir}`]
-                    .filter(Boolean).join(' ');
-                const result = await spawnChildProcess(cmd, [], step.continueOn, true, token);
+                const args: string[] = stepType === 'scp'
+                    ? buildScpArgs(files, host, target, recursive, jumpHosts)
+                    : buildRsyncArgs(files, host, target, recursive, jumpHosts);
+
+                const result = await spawnChildProcess(tool, args, step.continueOn, true, token);
                 if (!result.succeeded) {
                     void vscode.window.showErrorMessage(result.output);
                     return false;
@@ -407,15 +425,13 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
                     void vscode.window.showErrorMessage(vscode.l10n.t('"host" and "command" are required for ssh steps.'));
                     return false;
                 }
-                const host = typeof step.host === 'string' ? { hostName: step.host } : step.host;
-                const portArg = host.port ? `-p ${host.port}` : '';
-                const jumpArg = host.jumpHosts?.length
-                    ? `-J ${(host.jumpHosts as any[]).map((h: any) => deployHostAddress(h)).join(',')}`
-                    : '';
                 const sshTool = config.sshPath || 'ssh';
-                const hostAddr = deployHostAddress(host);
-                const cmd = [sshTool, portArg, jumpArg, hostAddr, `"${step.command}"`].filter(Boolean).join(' ');
-                const result = await spawnChildProcess(cmd, [], step.continueOn, true, token);
+                const host = normalizeDeployHost(step.host);
+                const jumpHosts = normalizeJumpHosts(host.jumpHosts);
+                const localForwards = normalizeLocalForwards(host.localForwards);
+                const args = buildSshArgs(host, step.command as string, jumpHosts, localForwards);
+
+                const result = await spawnChildProcess(sshTool, args, step.continueOn, true, token);
                 if (!result.succeeded) {
                     void vscode.window.showErrorMessage(result.output);
                     return false;
@@ -473,8 +489,318 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
     }
 }
 
-function deployHostAddress(host: { hostName: string; user?: string }): string {
+export function isDeployStepsSupported(vscodeVersion: string): boolean {
+    const [majorRaw, minorRaw] = vscodeVersion.split('.');
+    const major = Number.parseInt(majorRaw ?? '', 10);
+    const minor = Number.parseInt(minorRaw ?? '', 10);
+
+    if (Number.isNaN(major) || Number.isNaN(minor)) {
+        return true;
+    }
+
+    return major > 1 || (major === 1 && minor >= 69);
+}
+
+export function validateDeploySteps(steps: unknown[]): string | undefined {
+    for (const step of steps) {
+        if (!step || typeof step !== 'object') {
+            return vscode.l10n.t('Deploy step must be an object.');
+        }
+
+        const typedStep = step as { type?: unknown; args?: unknown; files?: unknown; targetDir?: unknown; host?: unknown; command?: unknown };
+        const stepType = typedStep.type;
+        if (typeof stepType !== 'string') {
+            return vscode.l10n.t('Deploy step type is required.');
+        }
+
+        if (stepType === 'command') {
+            if (!typedStep.command || typeof typedStep.command !== 'string') {
+                return vscode.l10n.t('"command" is required in command deploy step.');
+            }
+            if (typedStep.args !== undefined && !Array.isArray(typedStep.args)) {
+                return vscode.l10n.t('"args" in command deploy step must be an array.');
+            }
+            continue;
+        }
+
+        if (stepType === 'scp' || stepType === 'rsync') {
+            if (!typedStep.files || !typedStep.targetDir || !typedStep.host) {
+                return vscode.l10n.t('"host", "files", and "targetDir" are required in {0} steps.', stepType);
+            }
+            if (!isValidDeployFiles(typedStep.files)) {
+                return vscode.l10n.t('"files" must be a string or an array of strings in {0} steps.', stepType);
+            }
+            const hostError = validateDeployHost(typedStep.host);
+            if (hostError) {
+                return hostError;
+            }
+            continue;
+        }
+
+        if (stepType === 'ssh') {
+            if (!typedStep.host || !typedStep.command) {
+                return vscode.l10n.t('"host" and "command" are required for ssh steps.');
+            }
+            if (typeof typedStep.command !== 'string') {
+                return vscode.l10n.t('"command" is required for ssh steps.');
+            }
+            const hostError = validateDeployHost(typedStep.host);
+            if (hostError) {
+                return hostError;
+            }
+            if (typeof typedStep.host === 'object' && typedStep.host) {
+                const hostObject = typedStep.host as { localForwards?: unknown };
+                const localForwardsError = validateLocalForwards(hostObject.localForwards);
+                if (localForwardsError) {
+                    return localForwardsError;
+                }
+            }
+            continue;
+        }
+
+        if (stepType === 'shell') {
+            if (!typedStep.command || typeof typedStep.command !== 'string') {
+                return vscode.l10n.t('"command" is required for shell steps.');
+            }
+            continue;
+        }
+
+        return vscode.l10n.t('Deploy step type \'{0}\' is not supported.', stepType);
+    }
+
+    return undefined;
+}
+
+function deployHostAddress(host: { hostName: string; user?: string; port?: string | number }): string {
+    const hostNoPort = deployHostAddressNoPort(host);
+    return host.port ? `${hostNoPort}:${host.port}` : hostNoPort;
+}
+
+function deployHostAddressNoPort(host: { hostName: string; user?: string }): string {
     return host.user ? `${host.user}@${host.hostName}` : host.hostName;
+}
+
+function isValidDeployFiles(files: unknown): boolean {
+    return typeof files === 'string' || (Array.isArray(files) && files.every(file => typeof file === 'string'));
+}
+
+function normalizeDeployFiles(files: unknown): string[] {
+    if (typeof files === 'string') {
+        return [files];
+    }
+    if (Array.isArray(files)) {
+        return files.filter((file): file is string => typeof file === 'string');
+    }
+    return [];
+}
+
+export async function resolveDeployFiles(files: unknown): Promise<{ files: string[]; missing: string[] }> {
+    const patterns = normalizeDeployFiles(files);
+    const resolvedFiles: string[] = [];
+    const missingFiles: string[] = [];
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+
+    for (const pattern of patterns) {
+        const normalizedPattern = workspaceFolder && !path.isAbsolute(pattern)
+            ? path.resolve(workspaceFolder, pattern)
+            : pattern;
+
+        if (!isGlobPattern(normalizedPattern)) {
+            if (await pathAccessible(normalizedPattern)) {
+                resolvedFiles.push(normalizedPattern);
+            } else {
+                missingFiles.push(normalizedPattern);
+            }
+            continue;
+        }
+
+        const matches = await glob(normalizedPattern, {
+            nodir: true,
+            windowsPathsNoEscape: true,
+        });
+
+        for (const match of matches) {
+            resolvedFiles.push(match);
+        }
+    }
+
+    return {
+        files: Array.from(new Set(resolvedFiles)),
+        missing: Array.from(new Set(missingFiles)),
+    };
+}
+
+export function isGlobPattern(pattern: string): boolean {
+    return /[*?{}\[\]]/.test(pattern);
+}
+
+type DeployHost = {
+    hostName: string;
+    user?: string;
+    port?: string | number;
+    jumpHosts?: unknown;
+    localForwards?: unknown;
+};
+
+type LocalForward = {
+    bindAddress?: string;
+    port?: string | number;
+    host?: string;
+    hostPort?: string | number;
+    localSocket?: string;
+    remoteSocket?: string;
+};
+
+function normalizeDeployHost(host: unknown): DeployHost {
+    if (typeof host === 'string') {
+        return { hostName: host };
+    }
+    return (host ?? {}) as DeployHost;
+}
+
+function validateDeployHost(host: unknown): string | undefined {
+    if (typeof host === 'string') {
+        return host.trim().length > 0 ? undefined : vscode.l10n.t('"host" must not be empty.');
+    }
+    if (!host || typeof host !== 'object') {
+        return vscode.l10n.t('"host" must be a string or an object.');
+    }
+
+    const hostName = (host as { hostName?: unknown }).hostName;
+    if (typeof hostName !== 'string' || hostName.trim().length === 0) {
+        return vscode.l10n.t('"hostName" is required in host object.');
+    }
+
+    const jumpHosts = (host as { jumpHosts?: unknown }).jumpHosts;
+    if (jumpHosts !== undefined) {
+        if (!Array.isArray(jumpHosts)) {
+            return vscode.l10n.t('"jumpHosts" must be an array in host object.');
+        }
+        for (const jumpHost of jumpHosts) {
+            const jumpHostError = validateDeployHost(jumpHost);
+            if (jumpHostError) {
+                return jumpHostError;
+            }
+        }
+    }
+
+    return undefined;
+}
+
+function normalizeJumpHosts(jumpHosts: unknown): DeployHost[] {
+    if (!Array.isArray(jumpHosts)) {
+        return [];
+    }
+    return jumpHosts
+        .filter((host): host is Record<string, unknown> => !!host && typeof host === 'object')
+        .map(host => normalizeDeployHost(host));
+}
+
+function normalizeLocalForwards(localForwards: unknown): LocalForward[] {
+    if (!Array.isArray(localForwards)) {
+        return [];
+    }
+    return localForwards
+        .filter((entry): entry is Record<string, unknown> => !!entry && typeof entry === 'object')
+        .map(entry => entry as LocalForward);
+}
+
+function buildScpArgs(files: string[], host: DeployHost, target: string, recursive: boolean, jumpHosts: DeployHost[]): string[] {
+    const args: string[] = [];
+    if (recursive) {
+        args.push('-r');
+    }
+    if (jumpHosts.length > 0) {
+        args.push('-J', jumpHosts.map(deployHostAddress).join(','));
+    }
+    if (host.port) {
+        args.push('-P', `${host.port}`);
+    }
+    args.push(...files.map(quoteArgIfNeeded), quoteArgIfNeeded(target));
+    return args;
+}
+
+function buildRsyncArgs(files: string[], host: DeployHost, target: string, recursive: boolean, jumpHosts: DeployHost[]): string[] {
+    const args: string[] = ['-lKpvz'];
+    if (recursive) {
+        args.push('-r');
+    }
+    if (jumpHosts.length > 0) {
+        args.push('-e', `ssh -J ${jumpHosts.map(deployHostAddress).join(',')}`);
+    }
+    if (host.port) {
+        args.push(`--port=${host.port}`);
+    }
+    args.push(...files.map(quoteArgIfNeeded), quoteArgIfNeeded(target));
+    return args;
+}
+
+function buildSshArgs(host: DeployHost, command: string, jumpHosts: DeployHost[], localForwards: LocalForward[]): string[] {
+    const args: string[] = [];
+    if (jumpHosts.length > 0) {
+        args.push('-J', jumpHosts.map(deployHostAddress).join(','));
+    }
+    if (host.port) {
+        args.push('-p', `${host.port}`);
+    }
+    for (const localForward of localForwards) {
+        args.push(...localForwardToArgs(localForward));
+    }
+    args.push(deployHostAddressNoPort(host), quoteArgIfNeeded(command));
+    return args;
+}
+
+function validateLocalForwards(localForwards: unknown): string | undefined {
+    try {
+        for (const localForward of normalizeLocalForwards(localForwards)) {
+            localForwardToArgs(localForward);
+        }
+        return undefined;
+    } catch (error) {
+        if (error instanceof Error) {
+            return error.message;
+        }
+        return vscode.l10n.t('Invalid localForwards configuration.');
+    }
+}
+
+function localForwardToArgs(localForward: LocalForward): string[] {
+    if (localForward.localSocket && (localForward.bindAddress || localForward.port)) {
+        throw new Error(vscode.l10n.t('"localSocket" cannot be specified at the same time with "bindAddress" or "port" in localForwards'));
+    }
+    if (!localForward.localSocket && !localForward.port) {
+        throw new Error(vscode.l10n.t('"port" or "localSocket" required in localForwards'));
+    }
+    if (localForward.remoteSocket && (localForward.host || localForward.hostPort)) {
+        throw new Error(vscode.l10n.t('"remoteSocket" cannot be specified at the same time with "host" or "hostPort" in localForwards'));
+    }
+    if (!localForward.remoteSocket && (!localForward.host || !localForward.hostPort)) {
+        throw new Error(vscode.l10n.t('"host" and "hostPort", or "remoteSocket" required in localForwards'));
+    }
+
+    let arg = '';
+    if (localForward.localSocket) {
+        arg += `${localForward.localSocket}:`;
+    }
+    if (localForward.bindAddress) {
+        arg += `${localForward.bindAddress}:`;
+    }
+    if (localForward.port) {
+        arg += `${localForward.port}:`;
+    }
+    if (localForward.remoteSocket) {
+        arg += `${localForward.remoteSocket}`;
+    }
+    if (localForward.host && localForward.hostPort) {
+        arg += `${localForward.host}:${localForward.hostPort}`;
+    }
+
+    return ['-L', arg];
+}
+
+function quoteArgIfNeeded(value: string): string {
+    const escaped = value.replace(/(["\\$`])/g, '\\$1');
+    return /[\s"'`$]/.test(value) ? `"${escaped}"` : escaped;
 }
 
 async function checkExecutableExists(filePath: string): Promise<boolean> {
