@@ -59,7 +59,7 @@ The table below lists every top-level configuration property exposed in `package
 | customLaunchSetupCommands | object[] | Yes | No | `[]` | Replaces the default launch setup commands. |
 | launchCompleteCommand | enum | Yes | No | `exec-run` | Command executed after debugger setup completes. |
 | visualizerFile | string / string[] | Yes | Yes | `""` / `[]` | Natvis file or files used for visualization. |
-| svdPath | string | Yes | No | `""` | SVD file path. |
+| svdPath | string | Yes | No | `""` | The full path to an embedded device's SVD file. |
 | showDisplayString | boolean | Yes | Yes | `true` | Enables display strings when a visualizer file is used. |
 | environment | object[] | Yes | No | `[]` | Environment variables passed to the launched program. |
 | envFile | string | Yes | No | `${workspaceFolder}/.env` | File used to load environment variables. |

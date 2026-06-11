@@ -138,6 +138,27 @@ suite('Cpp Debug Extension Integration', () => {
 		});
 	});
 
+	test('expands launch variables recursively', async () => {
+		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cppdebug-test-'));
+		tempDirs.push(tempDir);
+
+		const config: vscode.DebugConfiguration = {
+			name: 'Launch',
+			type: 'cppdbg',
+			request: 'launch',
+			program: '/tmp/a.out',
+			args: ['${appName}/${binaryName}'],
+			variables: {
+				appName: 'demo',
+				binaryName: '${appName}.out',
+			},
+		};
+
+		const resolved = await provider.resolveDebugConfigurationWithSubstitutedVariables(createWorkspaceFolder(tempDir), config);
+		assert.ok(resolved, 'The configuration should resolve successfully');
+		assert.deepStrictEqual(resolved!.args, ['demo/demo.out']);
+	});
+
 	test('runs command deploy steps before launch', async () => {
 		let invoked = false;
 		const commandId = 'cppdebug.test.deploy-step';
