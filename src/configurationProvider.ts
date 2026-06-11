@@ -2,6 +2,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { AttachItem } from './attachQuickPick';
+import { expandAllStrings, ExpansionOptions, ExpansionVars } from './expand';
 import { NativeAttachItemsProviderFactory } from './nativeAttach';
 import { checkFileExists, ParsedEnvironmentFile, spawnChildProcess, whichAsync } from './utils';
 
@@ -105,8 +106,24 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
         // Merge environment variables from envFile into config.environment
         this.resolveEnvFile(config, folder);
 
-        // Expand launch-time variables declared in the debug configuration.
-        this.expandLaunchVariables(config, folder);
+        const folderPath = folder?.uri.fsPath || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        const vars: ExpansionVars = {
+            workspaceFolder: folderPath || '${workspaceFolder}',
+            workspaceFolderBasename: folderPath ? path.basename(folderPath) : '${workspaceFolderBasename}',
+        };
+        if (config.variables && typeof config.variables === 'object') {
+            for (const [name, value] of Object.entries(config.variables as Record<string, unknown>)) {
+                if (typeof value === 'string') {
+                    vars[name] = value;
+                }
+            }
+        }
+
+        const expansionOptions: ExpansionOptions = {
+            vars,
+            recursive: true,
+        };
+        await expandAllStrings(config, expansionOptions);
 
         // Expand ${env:VAR} references in sourceFileMap keys and values
         this.resolveSourceFileMapVariables(config);
@@ -337,77 +354,6 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
         config.sourceFileMap = newMap;
     }
 
-    private expandLaunchVariables(config: vscode.DebugConfiguration, folder?: vscode.WorkspaceFolder): void {
-        const folderPath = folder?.uri.fsPath || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-        const variables: Record<string, string> = {};
-
-        if (config.variables && typeof config.variables === 'object') {
-            for (const [name, value] of Object.entries(config.variables as Record<string, unknown>)) {
-                if (typeof value === 'string') {
-                    variables[name] = value;
-                }
-            }
-        }
-
-        variables.workspaceFolder = folderPath || '${workspaceFolder}';
-        variables.workspaceFolderBasename = folderPath ? path.basename(folderPath) : '${workspaceFolderBasename}';
-
-        this.expandStringsInObject(config, variables);
-    }
-
-    private expandStringsInObject(value: unknown, variables: Record<string, string>, depth: number = 0): unknown {
-        if (depth > 10 || value === null || value === undefined) {
-            return value;
-        }
-
-        if (typeof value === 'string') {
-            return this.expandString(value, variables);
-        }
-
-        if (Array.isArray(value)) {
-            return value.map(entry => this.expandStringsInObject(entry, variables, depth + 1));
-        }
-
-        if (typeof value === 'object') {
-            for (const key of Object.keys(value as Record<string, unknown>)) {
-                (value as Record<string, unknown>)[key] = this.expandStringsInObject(
-                    (value as Record<string, unknown>)[key],
-                    variables,
-                    depth + 1
-                );
-            }
-        }
-
-        return value;
-    }
-
-    private expandString(input: string, variables: Record<string, string>): string {
-        const maxRecursion = 10;
-        let result = input;
-
-        for (let i = 0; i < maxRecursion; i++) {
-            const expanded = result.replace(/\$\{([^}]+)\}/g, (match: string, name: string) => {
-                if (name === 'workspaceFolder') {
-                    return variables.workspaceFolder;
-                }
-
-                if (name === 'workspaceFolderBasename') {
-                    return variables.workspaceFolderBasename;
-                }
-
-                const replacement = variables[name];
-                return replacement !== undefined ? replacement : match;
-            });
-
-            if (expanded === result) {
-                break;
-            }
-
-            result = expanded;
-        }
-
-        return result;
-    }
     private async runDeploySteps(config: vscode.DebugConfiguration, token?: vscode.CancellationToken): Promise<boolean> {
         for (const step of config.deploySteps) {
             // Honor debug/noDebug filtering

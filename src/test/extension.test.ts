@@ -159,6 +159,24 @@ suite('Cpp Debug Extension Integration', () => {
 		assert.deepStrictEqual(resolved!.args, ['demo/demo.out']);
 	});
 
+	test('expands env variables and ${dollar}', async () => {
+		const envVarName = 'CPPDEBUG_TEST_EXPAND_ENV';
+		originalEnv.set(envVarName, process.env[envVarName]);
+		process.env[envVarName] = 'from-env';
+
+		const config: vscode.DebugConfiguration = {
+			name: 'Launch',
+			type: 'cppdbg',
+			request: 'launch',
+			program: '/tmp/a.out',
+			args: ['${env:CPPDEBUG_TEST_EXPAND_ENV}', '${dollar}{literal}'],
+		};
+
+		const resolved = await provider.resolveDebugConfigurationWithSubstitutedVariables(undefined, config);
+		assert.ok(resolved, 'The configuration should resolve successfully');
+		assert.deepStrictEqual(resolved!.args, ['from-env', '${literal}']);
+	});
+
 	test('runs command deploy steps before launch', async () => {
 		let invoked = false;
 		const commandId = 'cppdebug.test.deploy-step';
