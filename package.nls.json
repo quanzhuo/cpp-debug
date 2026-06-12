@@ -128,5 +128,10 @@
     "c_cpp.debuggers.logging.category.error.description": "Logs that highlight when the current flow of execution is stopped due to a failure. These should indicate a failure in the current activity, not an application-wide failure.",
     "c_cpp.debuggers.logging.category.none.description": "Not used for writing log messages. Specifies that a logging category should not write any messages.",
     "cppdebug.autoLoadPrettyPrinters.description": "Automatically load GDB pretty printers when debugging with GDB. This enables better visualization of complex C++ types like Qt containers and STL types.",
-    "cppdebug.enablePrettyPrinting.description": "Enable GDB pretty printing for the debugging session."
+    "cppdebug.enablePrettyPrinting.description": "Enable GDB pretty printing for the debugging session.",
+    "cppdebug.command.attachToProcess.title": "Attach to Process...",
+    "cppdebug.command.attachToProcessWithConfiguration.title": "Attach to Process with Configuration...",
+    "cppdebug.command.buildAndDebugFile.title": "Build and Debug Active File",
+    "cppdebug.command.buildAndRunFile.title": "Build and Run Active File",
+    "cppdebug.command.addDebugConfiguration.title": "Add Debug Configuration"
 }

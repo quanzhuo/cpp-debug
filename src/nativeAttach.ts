@@ -165,7 +165,7 @@ function spawnChildProcess(command: string, token?: vscode.CancellationToken): P
         let stderr: string = "";
 
         if (process) {
-            let cancellationTokenListener: vscode.Disposable | undefined; // eslint-disable-line prefer-const
+            let cancellationTokenListener: vscode.Disposable | undefined;
             // Handle timeout
             const seconds: number = 30;
             const processTimeout: NodeJS.Timeout = setTimeout(() => {

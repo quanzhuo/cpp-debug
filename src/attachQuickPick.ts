@@ -22,10 +22,9 @@ export interface AttachItem extends vscode.QuickPickItem {
     id?: string;
 }
 
-// We should not await on this function.
-export async function showQuickPick(getAttachItems: () => Promise<AttachItem[]>, context: vscode.ExtensionContext): Promise<string | undefined> {
+async function showAttachQuickPick(getAttachItems: () => Promise<AttachItem[]>, context: vscode.ExtensionContext): Promise<AttachItem | undefined> {
     const processEntries: AttachItem[] = await getAttachItems();
-    return new Promise<string | undefined>((resolve, reject) => {
+    return new Promise<AttachItem | undefined>((resolve, reject) => {
         const quickPick: vscode.QuickPick<AttachItem> = vscode.window.createQuickPick<AttachItem>();
         quickPick.title = vscode.l10n.t('Attach to process');
         quickPick.canSelectMany = false;
@@ -43,12 +42,12 @@ export async function showQuickPick(getAttachItems: () => Promise<AttachItem[]>,
                 reject(new Error(vscode.l10n.t('Process not selected.')));
             }
 
-            const selectedId: string | undefined = quickPick.selectedItems[0].id;
+            const selectedItem: AttachItem | undefined = quickPick.selectedItems[0];
 
             disposables.forEach(item => item.dispose());
             quickPick.dispose();
 
-            resolve(selectedId);
+            resolve(selectedItem);
         }, undefined, disposables);
 
         quickPick.onDidHide(() => {
@@ -60,4 +59,15 @@ export async function showQuickPick(getAttachItems: () => Promise<AttachItem[]>,
 
         quickPick.show();
     });
+}
+
+// We should not await on this function.
+export async function showQuickPick(getAttachItems: () => Promise<AttachItem[]>, context: vscode.ExtensionContext): Promise<string | undefined> {
+    const selectedItem = await showAttachQuickPick(getAttachItems, context);
+    return selectedItem?.id;
+}
+
+// We should not await on this function.
+export async function showAttachItemQuickPick(getAttachItems: () => Promise<AttachItem[]>, context: vscode.ExtensionContext): Promise<AttachItem | undefined> {
+    return showAttachQuickPick(getAttachItems, context);
 }

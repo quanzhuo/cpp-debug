@@ -1,20 +1,24 @@
+import * as cp from 'child_process';
+import * as fs from 'fs/promises';
 import { glob } from 'glob';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { AttachItem } from './attachQuickPick';
+import { AttachItem, showAttachItemQuickPick } from './attachQuickPick';
 import { expandAllStrings, ExpansionOptions, ExpansionVars } from './expand';
 import { NativeAttachItemsProviderFactory } from './nativeAttach';
-import { checkFileExists, ParsedEnvironmentFile, pathAccessible, spawnChildProcess, whichAsync } from './utils';
+import { checkFileExists, findPowerShell, ParsedEnvironmentFile, pathAccessible, spawnChildProcess, whichAsync } from './utils';
 
 /**
  * DebugConfigurationProvider for C/C++ debugging with GDB Pretty Printers
  */
 export class CppDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
     private extensionPath: string;
+    private context?: vscode.ExtensionContext;
 
-    constructor(extensionPath: string) {
+    constructor(extensionPath: string, context?: vscode.ExtensionContext) {
         this.extensionPath = extensionPath;
+        this.context = context;
     }
 
     /**
@@ -238,7 +242,7 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
         if (configs.length === 0) {
             const miMode = platform === 'darwin' ? 'lldb' : 'gdb';
             configs.push({
-                name: 'C/C++: Launch',
+                name: 'C/C++ Debug: Launch',
                 type: 'cppdbg',
                 request: 'launch',
                 program: `\${fileDirname}/\${fileBasenameNoExtension}${programExt}`,
@@ -271,6 +275,207 @@ export class CppDebugConfigurationProvider implements vscode.DebugConfigurationP
             result = result.concat(configs.globalValue);
         }
         return result.filter(c => c.name && c.request === 'launch' && (type ? c.type === type : true));
+    }
+
+    public getAttachConfigs(folder?: vscode.WorkspaceFolder, type?: string): vscode.DebugConfiguration[] {
+        const workspaceConfig = vscode.workspace.getConfiguration('launch', folder);
+        const configs = workspaceConfig.inspect<vscode.DebugConfiguration[]>('configurations');
+        let result: vscode.DebugConfiguration[] = [];
+        if (configs?.workspaceFolderValue) {
+            result = result.concat(configs.workspaceFolderValue);
+        }
+        if (configs?.workspaceValue) {
+            result = result.concat(configs.workspaceValue);
+        }
+        if (configs?.globalValue) {
+            result = result.concat(configs.globalValue);
+        }
+        return result.filter(c => c.name && c.request === 'attach' && (type ? c.type === type : true));
+    }
+
+    private async pickAttachItem(processes: AttachItem[]): Promise<AttachItem | undefined> {
+        if (processes.length === 0) {
+            void vscode.window.showWarningMessage(vscode.l10n.t('No attachable processes were found.'));
+            return undefined;
+        }
+
+        if (this.context) {
+            return showAttachItemQuickPick(() => Promise.resolve(processes), this.context);
+        }
+
+        return vscode.window.showQuickPick(processes, {
+            matchOnDetail: true,
+            matchOnDescription: true,
+            placeHolder: vscode.l10n.t('Select the process to attach to')
+        });
+    }
+
+    private async getProgramFromAttachItem(item: AttachItem): Promise<string> {
+        const commandLine = item.detail?.trim();
+        if (commandLine) {
+            const quoted = commandLine.match(/^"([^"]+)"|^'([^']+)'/);
+            if (quoted) {
+                return this.resolveAttachProgramPath(quoted[1] ?? quoted[2], item.id);
+            }
+
+            const token = commandLine.match(/^\S+/);
+            if (token) {
+                return this.resolveAttachProgramPath(token[0], item.id);
+            }
+        }
+
+        // Fall back to process name when full command line is unavailable (e.g. some Windows processes).
+        return this.resolveAttachProgramPath(item.label, item.id);
+    }
+
+    private async resolveAttachProgramPath(program: string, pid?: string): Promise<string> {
+        if (!program || path.isAbsolute(program)) {
+            return program;
+        }
+
+        if (!pid || !/^\d+$/.test(pid)) {
+            return program;
+        }
+
+        const platform = os.platform();
+
+        if (platform === 'linux') {
+            const linuxExecutablePath = await this.getLinuxProcessLinkTarget(pid, 'exe');
+            if (linuxExecutablePath) {
+                return linuxExecutablePath;
+            }
+
+            if (!program.startsWith('./') && !program.startsWith('../')) {
+                return program;
+            }
+
+            const cwd = await this.getLinuxProcessLinkTarget(pid, 'cwd');
+            if (!cwd) {
+                return program;
+            }
+
+            return path.resolve(cwd, program);
+        }
+
+        if (platform === 'darwin') {
+            return await this.getDarwinExecutablePath(pid) ?? program;
+        }
+
+        if (platform === 'win32') {
+            return await this.getWindowsExecutablePath(pid) ?? program;
+        }
+
+        return program;
+    }
+
+    private async getLinuxProcessLinkTarget(pid: string, linkName: 'exe' | 'cwd'): Promise<string | undefined> {
+        try {
+            return await fs.readlink(`/proc/${pid}/${linkName}`);
+        } catch {
+            return undefined;
+        }
+    }
+
+    private async getDarwinExecutablePath(pid: string): Promise<string | undefined> {
+        const output = await this.execFileCapture('/usr/sbin/lsof', ['-a', '-p', pid, '-d', 'txt', '-Fn'])
+            ?? await this.execFileCapture('lsof', ['-a', '-p', pid, '-d', 'txt', '-Fn']);
+        if (!output) {
+            return undefined;
+        }
+
+        for (const rawLine of output.split(/\r?\n/)) {
+            const line = rawLine.trim();
+            if (line.startsWith('n/')) {
+                return line.substring(1);
+            }
+        }
+
+        return undefined;
+    }
+
+    private async getWindowsExecutablePath(pid: string): Promise<string | undefined> {
+        const pwsh = findPowerShell();
+        if (!pwsh) {
+            return undefined;
+        }
+
+        const script = `$p = Get-CimInstance Win32_Process -Filter \"ProcessId = ${pid}\" -ErrorAction SilentlyContinue; if ($p -and $p.ExecutablePath) { [Console]::Write($p.ExecutablePath) }`;
+        const output = await this.execFileCapture(pwsh, ['-NoProfile', '-Command', script]);
+        return output?.trim() || undefined;
+    }
+
+    private execFileCapture(program: string, args: string[]): Promise<string | undefined> {
+        return new Promise(resolve => {
+            cp.execFile(program, args, { windowsHide: true }, (error, stdout) => {
+                if (error) {
+                    resolve(undefined);
+                    return;
+                }
+
+                const trimmed = (stdout ?? '').trim();
+                resolve(trimmed.length > 0 ? trimmed : undefined);
+            });
+        });
+    }
+
+    public async attachToProcess(folder?: vscode.WorkspaceFolder): Promise<void> {
+        const provider = NativeAttachItemsProviderFactory.Get();
+        const processSelection = await this.pickAttachItem(await provider.getAttachItems());
+        const processId = processSelection?.id;
+        if (!processId) {
+            return;
+        }
+
+        const attachConfig: vscode.DebugConfiguration = {
+            name: vscode.l10n.t('C/C++: Attach to Process'),
+            type: 'cppdbg',
+            request: 'attach',
+            program: await this.getProgramFromAttachItem(processSelection),
+            processId,
+        };
+
+        await vscode.debug.startDebugging(folder, attachConfig);
+    }
+
+    public async attachToProcessWithConfiguration(folder?: vscode.WorkspaceFolder): Promise<void> {
+        const attachConfigs = this.getAttachConfigs(folder, 'cppdbg')
+            .filter(config => !config.pipeTransport && !config.useExtendedRemote);
+
+        if (attachConfigs.length === 0) {
+            void vscode.window.showWarningMessage(vscode.l10n.t('No local C/C++ attach configurations were found. Falling back to quick attach.'));
+            await this.attachToProcess(folder);
+            return;
+        }
+
+        let selectedConfig: vscode.DebugConfiguration;
+        if (attachConfigs.length === 1) {
+            selectedConfig = attachConfigs[0];
+        } else {
+            const configSelection = await vscode.window.showQuickPick(attachConfigs.map(config => ({
+                label: config.name as string,
+                description: config.program ? `${config.program}` : undefined,
+                config,
+            })), {
+                placeHolder: vscode.l10n.t('Select an attach configuration')
+            });
+            if (!configSelection) {
+                return;
+            }
+            selectedConfig = configSelection.config;
+        }
+
+        const provider = NativeAttachItemsProviderFactory.Get();
+        const processSelection = await this.pickAttachItem(await provider.getAttachItems());
+        const processId = processSelection?.id;
+        if (!processId) {
+            return;
+        }
+
+        const program = typeof selectedConfig.program === 'string' && selectedConfig.program.length > 0
+            ? selectedConfig.program
+            : await this.getProgramFromAttachItem(processSelection);
+
+        await vscode.debug.startDebugging(folder, { ...selectedConfig, processId, program });
     }
 
     public async buildAndDebug(textEditor: vscode.TextEditor, debugModeOn: boolean = true): Promise<void> {

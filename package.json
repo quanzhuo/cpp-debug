@@ -2,7 +2,7 @@
   "name": "cppdebug",
   "displayName": "C/C++ Debug",
   "description": "C/C++ Debugger extension using MIEngine",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "license": "MIT",
   "engines": {
     "vscode": "^1.85.0"
@@ -28,10 +28,7 @@
     "onLanguage:cpp",
     "onDebugResolve:cppdbg",
     "onCommand:cppdebug.pickNativeProcess",
-    "onCommand:cppdebug.pickRemoteNativeProcess",
-    "onCommand:cppdebug.buildAndDebugFile",
-    "onCommand:cppdebug.buildAndRunFile",
-    "onCommand:cppdebug.addDebugConfiguration"
+    "onCommand:cppdebug.pickRemoteNativeProcess"
   ],
   "downloadUrl": "https://gitee.com/openkylin/extensions-repo/tree/master/KylinIDETeam/cppdebug",
   "author": {
@@ -53,7 +50,7 @@
     "debuggers": [
       {
         "type": "cppdbg",
-        "label": "C/C++ (gdb)",
+        "label": "C/C++ Debug (gdb)",
         "languages": [
           "ada",
           "c",
@@ -1958,25 +1955,47 @@
     },
     "commands": [
       {
+        "command": "cppdebug.attachToProcess",
+        "title": "%cppdebug.command.attachToProcess.title%",
+        "category": "C/C++ Debug",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "cppdebug.attachToProcessWithConfiguration",
+        "title": "%cppdebug.command.attachToProcessWithConfiguration.title%",
+        "category": "C/C++ Debug",
+        "icon": "$(settings-gear)"
+      },
+      {
         "command": "cppdebug.buildAndDebugFile",
-        "title": "Build and Debug Active File",
+        "title": "%cppdebug.command.buildAndDebugFile.title%",
         "category": "C/C++ Debug",
         "icon": "$(debug-alt)"
       },
       {
         "command": "cppdebug.buildAndRunFile",
-        "title": "Build and Run Active File",
+        "title": "%cppdebug.command.buildAndRunFile.title%",
         "category": "C/C++ Debug",
         "icon": "$(run)"
       },
       {
         "command": "cppdebug.addDebugConfiguration",
-        "title": "Add Debug Configuration",
+        "title": "%cppdebug.command.addDebugConfiguration.title%",
         "category": "C/C++ Debug",
         "icon": "$(debug-configure)"
       }
     ],
     "menus": {
+      "commandPalette": [
+        {
+          "command": "cppdebug.attachToProcess",
+          "group": "1_attach@0"
+        },
+        {
+          "command": "cppdebug.attachToProcessWithConfiguration",
+          "group": "1_attach@1"
+        }
+      ],
       "editor/title/run": [
         {
           "command": "cppdebug.buildAndDebugFile",

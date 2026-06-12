@@ -128,5 +128,10 @@
     "c_cpp.debuggers.logging.category.error.description": "记录在当前执行流程因故障而停止时的日志。这些日志应指示当前活动中的故障，而不是应用程序范围的故障。",
     "c_cpp.debuggers.logging.category.none.description": "不用于写入日志消息。指定日志类别不应写入任何消息。",
     "cppdebug.autoLoadPrettyPrinters.description": "使用 GDB 调试时自动加载 GDB pretty printer。这可以更好地可视化复杂的 C++ 类型，如 Qt 容器和 STL 类型。",
-    "cppdebug.enablePrettyPrinting.description": "为调试会话启用 GDB 美化打印。"
+    "cppdebug.enablePrettyPrinting.description": "为调试会话启用 GDB 美化打印。",
+    "cppdebug.command.attachToProcess.title": "附加到进程...",
+    "cppdebug.command.attachToProcessWithConfiguration.title": "使用配置附加到进程...",
+    "cppdebug.command.buildAndDebugFile.title": "构建并调试当前文件",
+    "cppdebug.command.buildAndRunFile.title": "构建并运行当前文件",
+    "cppdebug.command.addDebugConfiguration.title": "添加调试配置"
 }

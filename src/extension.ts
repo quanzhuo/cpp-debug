@@ -13,7 +13,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('cppdebug.pickRemoteNativeProcess', (any) => remoteAttacher.ShowAttachEntries(any)));
 
 	// Register debug configuration provider to auto-inject GDB pretty printer setup
-	const configProvider = new CppDebugConfigurationProvider(context.extensionPath);
+	const configProvider = new CppDebugConfigurationProvider(context.extensionPath, context);
 	context.subscriptions.push(
 		vscode.debug.registerDebugConfigurationProvider('cppdbg', configProvider)
 	);
@@ -31,6 +31,24 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand('cppdebug.addDebugConfiguration', (textEditor) => configProvider.addDebugConfiguration(textEditor))
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand('cppdebug.attachToProcess', async () => {
+			const activeFolder = vscode.window.activeTextEditor
+				? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)
+				: undefined;
+			const fallbackFolder = vscode.workspace.workspaceFolders?.[0];
+			await configProvider.attachToProcess(activeFolder ?? fallbackFolder);
+		})
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand('cppdebug.attachToProcessWithConfiguration', async () => {
+			const activeFolder = vscode.window.activeTextEditor
+				? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)
+				: undefined;
+			const fallbackFolder = vscode.workspace.workspaceFolders?.[0];
+			await configProvider.attachToProcessWithConfiguration(activeFolder ?? fallbackFolder);
+		})
 	);
 }
 

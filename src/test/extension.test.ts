@@ -56,6 +56,8 @@ suite('Cpp Debug Extension Integration', () => {
 
 	test('activates and registers extension commands', async () => {
 		const commands = await vscode.commands.getCommands(true);
+		assert.ok(commands.includes('cppdebug.attachToProcess'));
+		assert.ok(commands.includes('cppdebug.attachToProcessWithConfiguration'));
 		assert.ok(commands.includes('cppdebug.pickNativeProcess'));
 		assert.ok(commands.includes('cppdebug.pickRemoteNativeProcess'));
 		assert.ok(commands.includes('cppdebug.buildAndDebugFile'));
