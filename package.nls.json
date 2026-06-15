@@ -133,5 +133,12 @@
     "cppdebug.command.attachToProcessWithConfiguration.title": "Attach to Process with Configuration...",
     "cppdebug.command.buildAndDebugFile.title": "Build and Debug Active File",
     "cppdebug.command.buildAndRunFile.title": "Build and Run Active File",
-    "cppdebug.command.addDebugConfiguration.title": "Add Debug Configuration"
+    "cppdebug.command.addDebugConfiguration.title": "Add Debug Configuration",
+    "cppdebug.snippet.launchGdb.description": "Launch a C/C++ program locally using GDB directly",
+    "cppdebug.snippet.attachGdb.description": "Attach to a local running C/C++ process by PID using GDB",
+    "cppdebug.snippet.launchGdbserver.description": "Launch a C/C++ program on a remote host via gdbserver (gdbserver starts the program)",
+    "cppdebug.snippet.attachGdbserver.description": "Attach to an already-running program on a remote gdbserver (using extended-remote mode)",
+    "cppdebug.snippet.launchPipe.description": "Launch a C/C++ program on a remote host via a pipe program (e.g. ssh, docker exec). The local machine does not need GDB; the MI debugger runs on the remote host",
+    "cppdebug.snippet.attachPipe.description": "Attach to a running C/C++ process on a remote host via a pipe program (e.g. ssh, docker exec). The local machine does not need GDB; the MI debugger runs on the remote host",
+    "cppdebug.snippet.coreDump.description": "Analyze a core dump file offline using GDB (requires specifying the original executable and core dump path)"
 }

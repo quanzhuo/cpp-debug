@@ -133,5 +133,12 @@
     "cppdebug.command.attachToProcessWithConfiguration.title": "使用配置附加到进程...",
     "cppdebug.command.buildAndDebugFile.title": "构建并调试当前文件",
     "cppdebug.command.buildAndRunFile.title": "构建并运行当前文件",
-    "cppdebug.command.addDebugConfiguration.title": "添加调试配置"
+    "cppdebug.command.addDebugConfiguration.title": "添加调试配置",
+    "cppdebug.snippet.launchGdb.description": "在本地使用 GDB 直接启动 C/C++ 程序",
+    "cppdebug.snippet.attachGdb.description": "通过 PID 附加到本地正在运行的 C/C++ 进程（使用 GDB）",
+    "cppdebug.snippet.launchGdbserver.description": "通过 gdbserver 在远程主机上启动 C/C++ 程序（由 gdbserver 启动被调试程序）",
+    "cppdebug.snippet.attachGdbserver.description": "附加到远程 gdbserver 上已运行的程序（使用 extended-remote 模式）",
+    "cppdebug.snippet.launchPipe.description": "通过管道程序（如 ssh、docker exec）在远程主机上启动 C/C++ 程序，本地无需安装 GDB，MI 调试器在远程主机上运行",
+    "cppdebug.snippet.attachPipe.description": "通过管道程序（如 ssh、docker exec）附加到远程主机上正在运行的 C/C++ 进程，本地无需安装 GDB，MI 调试器在远程主机上运行",
+    "cppdebug.snippet.coreDump.description": "使用 GDB 离线分析 core dump 文件（需要指定原始可执行文件和 core dump 文件路径）"
 }

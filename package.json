@@ -1854,31 +1854,14 @@
           }
         },
         "initialConfigurations": [
-          {
-            "name": "C/C++ Debug (gdb Launch)",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "enter program name, for example: ${workspaceFolder}/a.out",
-            "args": [],
-            "stopAtEntry": true,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "MIMode": "gdb",
-            "setupCommands": [
-              {
-                "description": "Enable pretty-printing for gdb",
-                "text": "-enable-pretty-printing",
-                "ignoreFailures": true
-              }
-            ]
-          }
+          
         ],
         "configurationSnippets": [
           {
-            "label": "C/C++ Debug (gdb Launch)",
-            "description": "Launch a C/C++ program",
+            "label": "C/C++ Debug: Launch with GDB",
+            "description": "%cppdebug.snippet.launchGdb.description%",
             "body": {
-              "name": "C/C++ Debug (gdb Launch)",
+              "name": "C/C++ Debug: Launch with GDB",
               "type": "cppdbg",
               "request": "launch",
               "program": "^\"enter program name, for example: \\${workspaceFolder}/a.out\"",
@@ -1897,10 +1880,10 @@
             }
           },
           {
-            "label": "C/C++ Debug (gdb Attach)",
-            "description": "Attach to a running C/C++ program",
+            "label": "C/C++ Debug: Attach with GDB",
+            "description": "%cppdebug.snippet.attachGdb.description%",
             "body": {
-              "name": "C/C++ Debug (gdb Attach)",
+              "name": "C/C++ Debug: Attach with GDB",
               "type": "cppdbg",
               "request": "attach",
               "program": "^\"enter program name, for example: \\${workspaceFolder}/a.out\"",
@@ -1913,6 +1896,139 @@
                   "ignoreFailures": true
                 }
               ]
+            }
+          },
+          {
+            "label": "C/C++ Debug: Remote Launch with gdbserver",
+            "description": "%cppdebug.snippet.launchGdbserver.description%",
+            "body": {
+              "name": "C/C++ Debug: Remote Launch with gdbserver",
+              "type": "cppdbg",
+              "request": "launch",
+              "program": "^\"enter program name, for example: \\${workspaceFolder}/a.out\"",
+              "stopAtEntry": true,
+              "stopAtConnect": false,
+              "cwd": "^\"\\${workspaceFolder}\"",
+              "environment": [],
+              "MIMode": "gdb",
+              "miDebuggerServerAddress": "gdbserverHostIp:port",
+              "sourceFileMap": {
+                "/original/source/path": "^\"\\${workspaceFolder}\""
+              },
+              "setupCommands": [
+                {
+                  "description": "Enable pretty-printing for gdb",
+                  "text": "-enable-pretty-printing",
+                  "ignoreFailures": true
+                }
+              ]
+            }
+          },
+          {
+            "label": "C/C++ Debug: Remote Attach with gdbserver",
+            "description": "%cppdebug.snippet.attachGdbserver.description%",
+            "body": {
+              "name": "C/C++ Debug: Remote Attach with gdbserver",
+              "type": "cppdbg",
+              "request": "attach",
+              "program": "^\"enter program name, for example: \\${workspaceFolder}/a.out\"",
+              "MIMode": "gdb",
+              "miDebuggerPath": "/usr/bin/gdb",
+              "miDebuggerServerAddress": "gdbserverHostIp:port",
+              "useExtendedRemote": true,
+              "processId": "^\"\\${command:pickRemoteProcess}\"",
+              "sourceFileMap": {
+                "/original/source/path": "^\"\\${workspaceFolder}\""
+              },
+              "setupCommands": [
+                {
+                  "description": "Enable pretty-printing for gdb",
+                  "text": "-enable-pretty-printing",
+                  "ignoreFailures": true
+                }
+              ]
+            }
+          },
+          {
+            "label": "C/C++ Debug: Remote Launch via Pipe Program",
+            "description": "%cppdebug.snippet.launchPipe.description%",
+            "body": {
+              "name": "C/C++ Debug: Remote Launch via Pipe Program",
+              "type": "cppdbg",
+              "request": "launch",
+              "program": "/path/to/debugee/on/remote",
+              "cwd": "/path/to/debugee/cwd",
+              "MIMode": "gdb",
+              "stopAtEntry": true,
+              "stopAtConnect": false,
+              "pipeTransport": {
+                "pipeCwd": "/usr/bin",
+                "pipeProgram": "ssh",
+                "pipeArgs": [
+                  "-p",
+                  "22",
+                  "user@remoteHostIp"
+                ],
+                "debuggerPath": "/usr/bin/gdb",
+                "quoteArgs": true
+              },
+              "sourceFileMap": {
+                "/original/source/path": "^\"\\${workspaceFolder}\""
+              },
+              "setupCommands": [
+                {
+                  "description": "Enable pretty-printing for gdb",
+                  "text": "-enable-pretty-printing",
+                  "ignoreFailures": true
+                }
+              ]
+            }
+          },
+          {
+            "label": "C/C++ Debug: Remote Attach via Pipe Program",
+            "description": "%cppdebug.snippet.attachPipe.description%",
+            "body": {
+              "name": "C/C++ Debug: Remote Attach via Pipe Program",
+              "type": "cppdbg",
+              "request": "attach",
+              "program": "/path/to/debugee/on/remote",
+              "processId": "^\"\\${command:pickRemoteProcess}\"",
+              "MIMode": "gdb",
+              "pipeTransport": {
+                "pipeCwd": "/usr/bin",
+                "pipeProgram": "ssh",
+                "pipeArgs": [
+                  "-p",
+                  "22",
+                  "user@remoteHostIp"
+                ],
+                "debuggerPath": "/usr/bin/gdb",
+                "quoteArgs": true
+              },
+              "sourceFileMap": {
+                "/original/source/path": "^\"\\${workspaceFolder}\""
+              },
+              "setupCommands": [
+                {
+                  "description": "Enable pretty-printing for gdb",
+                  "text": "-enable-pretty-printing",
+                  "ignoreFailures": true
+                }
+              ]
+            }
+          },
+          {
+            "label": "C/C++ Debug: Core Dump Analysis",
+            "description": "%cppdebug.snippet.coreDump.description%",
+            "body": {
+              "name": "C/C++ Debug: Core Dump Analysis",
+              "type": "cppdbg",
+              "request": "launch",
+              "program": "/path/to/crashed/executable",
+              "cwd": "^\"\\${workspaceFolder}\"",
+              "coreDumpPath": "/path/to/coredump",
+              "MIMode": "gdb",
+              "miDebuggerPath": "/usr/bin/gdb"
             }
           }
         ]
