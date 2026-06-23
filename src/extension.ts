@@ -12,25 +12,9 @@ export function activate(context: vscode.ExtensionContext) {
 	const remoteAttacher: RemoteAttachPicker = new RemoteAttachPicker();
 	context.subscriptions.push(vscode.commands.registerCommand('cppdebug.pickRemoteNativeProcess', (any) => remoteAttacher.ShowAttachEntries(any)));
 
-	// Register debug configuration provider to auto-inject GDB pretty printer setup
 	const configProvider = new CppDebugConfigurationProvider(context.extensionPath, context);
 	context.subscriptions.push(
 		vscode.debug.registerDebugConfigurationProvider('cppdbg', configProvider)
-	);
-	// Register as Dynamic provider so the "Run and Debug" panel shows auto-detected configs
-	context.subscriptions.push(
-		vscode.debug.registerDebugConfigurationProvider('cppdbg', configProvider, vscode.DebugConfigurationProviderTriggerKind.Dynamic)
-	);
-
-	// Register Build and Debug / Build and Run / Add Debug Configuration commands
-	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand('cppdebug.buildAndDebugFile', (textEditor) => configProvider.buildAndDebug(textEditor))
-	);
-	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand('cppdebug.buildAndRunFile', (textEditor) => configProvider.buildAndRun(textEditor))
-	);
-	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand('cppdebug.addDebugConfiguration', (textEditor) => configProvider.addDebugConfiguration(textEditor))
 	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand('cppdebug.attachToProcess', async () => {

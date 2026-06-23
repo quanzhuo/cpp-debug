@@ -43,6 +43,15 @@ example configurations
 }
 ```
 
+## Extension Settings
+
+This extension contributes the following settings under the `cppdebug` namespace:
+
+| Setting | Default | Description |
+|---|---|---|
+| `cppdebug.enablePrettyPrinting` | `true` | Automatically enable GDB pretty printing for the debugging session. When enabled, the `-enable-pretty-printing` command is injected into the debugger's `setupCommands`. |
+| `cppdebug.autoLoadPrettyPrinters` | `true` | Automatically load the extension's bundled [GDB pretty printing scripts](https://github.com/quanzhuo/gdb-pretty-printers). Currently includes pretty printers for **Qt** types (e.g., `QString`, `QList`, `QMap`, etc.). The `autoload.py` script is sourced into GDB during debug session initialization. |
+
 ## Detailed Configuration
 
 The table below lists every top-level configuration property exposed in `package.json` for the `launch` and `attach` request types.

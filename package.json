@@ -2081,24 +2081,6 @@
         "title": "%cppdebug.command.attachToProcessWithConfiguration.title%",
         "category": "C/C++ Debug",
         "icon": "$(settings-gear)"
-      },
-      {
-        "command": "cppdebug.buildAndDebugFile",
-        "title": "%cppdebug.command.buildAndDebugFile.title%",
-        "category": "C/C++ Debug",
-        "icon": "$(debug-alt)"
-      },
-      {
-        "command": "cppdebug.buildAndRunFile",
-        "title": "%cppdebug.command.buildAndRunFile.title%",
-        "category": "C/C++ Debug",
-        "icon": "$(run)"
-      },
-      {
-        "command": "cppdebug.addDebugConfiguration",
-        "title": "%cppdebug.command.addDebugConfiguration.title%",
-        "category": "C/C++ Debug",
-        "icon": "$(debug-configure)"
       }
     ],
     "menus": {
@@ -2110,25 +2092,6 @@
         {
           "command": "cppdebug.attachToProcessWithConfiguration",
           "group": "1_attach@1"
-        }
-      ],
-      "editor/title/run": [
-        {
-          "command": "cppdebug.buildAndDebugFile",
-          "when": "editorLangId =~ /^(c|cpp)$/",
-          "group": "navigation@0"
-        },
-        {
-          "command": "cppdebug.buildAndRunFile",
-          "when": "editorLangId =~ /^(c|cpp)$/",
-          "group": "navigation@1"
-        }
-      ],
-      "editor/title": [
-        {
-          "command": "cppdebug.addDebugConfiguration",
-          "when": "editorLangId =~ /^(c|cpp)$/ && workspaceFolderCount > 0",
-          "group": "navigation"
         }
       ]
     }

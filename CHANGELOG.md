@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.4.0
+
+- 添加两个命令：`cppdebug.cppdebug.attachToProcess` 和 `cppdebug.attachToProcessWithConfiguration`
+- 添加更多的 configurationSnippets，覆盖常用调试场景
+
 ## v0.3.0
 
 - 内置 gdb-pretty-printers for Qt, 美化打印比 Natvis 性能更好
